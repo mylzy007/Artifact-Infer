@@ -5,8 +5,11 @@ from transformers import AutoTokenizer
 import os
 import datasets
 from torch.utils.data import DataLoader, Dataset
-
+from dotenv import load_dotenv
+load_dotenv() 
 from .utils import evaluate
+
+MODEL_PATH = os.getenv("MODEL_PATH")
 
 torch.set_printoptions(profile="full")
 
@@ -36,7 +39,7 @@ class Dataset_with_template(Dataset):
         return len(self.dataframe)
 
 
-def generate_answer(local_dir="datasets", model_path="/home/yyx/models/Qwen3-4B"):
+def generate_answer(local_dir="datasets", model_path=f"{MODEL_PATH}/Qwen3-4B"):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     llm = LLM(model_path, 
               enforce_eager=False, 
