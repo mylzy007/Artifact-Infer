@@ -54,7 +54,7 @@ class Artifact(ABC):
         pass
 
     @property
-    @abstractmethod
+    # @abstractmethod
     def name(self) -> str:
         pass
 

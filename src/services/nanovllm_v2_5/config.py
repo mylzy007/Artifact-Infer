@@ -11,7 +11,7 @@ class Config:
     max_model_len: int = 4096
     gpu_memory_utilization: float = 0.9
     tensor_parallel_size: int = 1
-    enforce_eager: bool = False
+    enforce_eager: bool = True
     hf_config: AutoConfig | None = None
     eos: int = -1
     kvcache_block_size: int = 1

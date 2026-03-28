@@ -6,8 +6,8 @@ import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
 from src.services.nanovllm_v2_5.utils.context import get_context
 
-from src.core.artifact_base import Artifact
-from src.core.service_base import BaseService
+from src.core.artifact import Artifact
+from src.core.service import BaseService
 
 @triton.jit
 def store_kvcache_kernel(

@@ -54,17 +54,18 @@ def generate_answer(
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     llm = LLM(
         model_path,
-        enforce_eager=enforce_eager,
-        tensor_parallel_size=1,
-        if_compress_kvcache=True,
-        compress_method=compress_method,
-        layer_budget=layer_budget + window_size,
+        enforce_eager=enforce_eager, 
+        tensor_parallel_size=1, 
+        if_compress_kvcache=True, 
+        compress_method=compress_method, 
+        layer_budget=layer_budget + window_size, 
         layer_upper_budget=layer_upper_budget + window_size, 
-        window_size=window_size,
+        window_size=window_size, 
         steps_between_cache_compressions=steps_between_cache_compressions,
         p_attn=p_attn, 
-        if_fake_compress=if_fake_compress,
+        if_fake_compress=if_fake_compress
     )
+    
     sampling_params = SamplingParams(
         temperature=0.6, top_k=20, top_p=0.95, max_tokens=32768
     )

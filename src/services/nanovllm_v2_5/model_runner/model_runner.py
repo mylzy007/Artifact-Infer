@@ -1,4 +1,6 @@
+from logging import config
 import pickle
+from xml.parsers.expat import model
 import torch
 import torch.distributed as dist
 from multiprocessing.synchronize import Event
@@ -11,10 +13,12 @@ from .layers.sampler import Sampler
 from ..utils.context import set_context, get_context, reset_context
 from ..utils.loader import load_model
 
-from src.core.service_base import BaseService
+from src.core.service import BaseService
 import itertools
 
-from src.services.nanovllm_v2_5.model_runner.models.qwen3 import Qwen3AttentionArtifacts
+from src.core.orchestrator import RegistryOrchestrator
+from src.artifacts.nanovllm_v2_5.attention.flashinfer_attention import Attention as FlashinferAttention
+# from src.services.nanovllm_v2_5.model_runner.models.qwen3 import Qwen3AttentionArtifacts
 
 from enum import Enum
 
@@ -29,31 +33,39 @@ class ModelRunner(BaseService):
     def name(self):
         return f"ModelRunner-Rank{self.rank}"
 
-    def __init__(self, config: Config, rank: int, event: Event | list[Event]):
-        BaseService.__init__(self)
+    def __init__(self, config: Config):
+        super().__init__()
+        self.rank = dist.get_rank()
         self.config = config
-        hf_config = config.hf_config
         self.block_size = config.kvcache_block_size
         self.enforce_eager = config.enforce_eager
         self.world_size = config.tensor_parallel_size
-        self.rank = rank
-        self.event = event
+        
+        torch.set_default_dtype(self.config.hf_config.torch_dtype)
+        
+        orch = RegistryOrchestrator()
+        
+        attention = orch.add(FlashinferAttention(config))
 
-        dist.init_process_group(
-            "nccl", "tcp://localhost:2333", world_size=self.world_size, rank=rank
-        )
-        torch.cuda.set_device(rank)
-        self.device = torch.device("cuda", rank)
-        default_dtype = torch.get_default_dtype()
-        torch.set_default_dtype(hf_config.torch_dtype)
-        torch.set_default_device("cuda")
+        self.model = orch.add(Qwen3ForCausalLM(config.hf_config))
 
-        self.attention_backend = Qwen3AttentionArtifacts.init_new(self, hf_config)
-        self.attention_backend.register(self)
-        self.model = Qwen3ForCausalLM(self.attention_backend, hf_config)
-        load_model(self.model, config.model)
+        orch.register(attention, "init_forward_metadata_capture_cuda_graph", self)
+        orch.register(attention, "init_forward_metadata_replay_cuda_graph", self)
+        orch.register(attention, "prepare_metadata_for_attn_decode", self)
+        orch.register(attention, "prepare_metadata_for_attn_prefill", self)
+        
+        for module in self.model.modules():
+            if hasattr(module, "k_cache") and hasattr(module, "v_cache"):
+                 orch.register(attention, "attn", module)
+        orch.finalize()
+                
+        self.__post_init__()
+    
+    def __post_init__(self):
+        # self.attention_backend = Qwen3AttentionArtifacts.init_new(self, hf_config)
+        # self.attention_backend.register(self)
+        load_model(self.model, self.config.model)
         self.sampler = Sampler()
-
         self.allocate_kv_cache()
 
         # self.stage = RunningStage.WARMUP
@@ -64,58 +76,9 @@ class ModelRunner(BaseService):
         if not self.enforce_eager:
             self.capture_cudagraph()
         print("after capturing cuda graph")
-        torch.set_default_device("cpu")
-        torch.set_default_dtype(default_dtype)
-
-        if self.world_size > 1:
-            if rank == 0:
-                self.shm = SharedMemory(name="nanovllm", create=True, size=2**20)
-                dist.barrier()
-            else:
-                dist.barrier()
-                self.shm = SharedMemory(name="nanovllm")
-                self.loop()
-
-    def exit(self):
-        if self.world_size > 1:
-            self.shm.close()
-            dist.barrier()
-            if self.rank == 0:
-                self.shm.unlink()
-        if not self.enforce_eager:
-            del self.graphs, self.graph_pool
-        torch.cuda.synchronize()
-        dist.destroy_process_group()
-
-    def loop(self):
-        while True:
-            method_name, args = self.read_shm()
-            self.call(method_name, *args)
-            if method_name == "exit":
-                break
-
-    def read_shm(self):
-        assert self.world_size > 1 and self.rank
-        self.event.wait()
-        n = int.from_bytes(self.shm.buf[0:4], "little")
-        method_name, *args = pickle.loads(self.shm.buf[4 : n + 4])
-        self.event.clear()
-        return method_name, args
-
-    def write_shm(self, method_name, *args):
-        assert self.world_size > 1 and not self.rank
-        data = pickle.dumps([method_name, *args])
-        n = len(data)
-        self.shm.buf[0:4] = n.to_bytes(4, "little")
-        self.shm.buf[4 : n + 4] = data
-        for event in self.event:
-            event.set()
-
-    def call(self, method_name, *args):
-        if self.world_size > 1 and self.rank == 0:
-            self.write_shm(method_name, *args)
-        method = getattr(self, method_name, None)
-        return method(*args)
+        # default_dtype = torch.get_default_dtype()
+        # torch.set_default_device("cpu")
+        # torch.set_default_dtype(default_dtype)
 
     def warmup_model(self):
         torch.cuda.empty_cache()
@@ -132,6 +95,7 @@ class ModelRunner(BaseService):
         torch.cuda.empty_cache()
 
     def allocate_kv_cache(self):
+        print(f"Allocating KV cache on cuda {torch.get_default_device()}...")
         config = self.config
         hf_config = config.hf_config
         free, total = torch.cuda.mem_get_info()
@@ -151,7 +115,8 @@ class ModelRunner(BaseService):
             int(total * config.gpu_memory_utilization - used - peak + current)
             // block_bytes
         )
-        assert config.num_kvcache_blocks > 0
+        assert config.num_kvcache_blocks > 0        
+        
         self.kv_cache = torch.zeros(
             2,
             hf_config.num_hidden_layers,

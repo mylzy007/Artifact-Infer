@@ -13,51 +13,51 @@ from ..layers.linear import (
 from ..layers.rotary_embedding import get_rope
 from ..layers.embed_head import VocabParallelEmbedding, ParallelLMHead
 from src.services.nanovllm_v2_5.engine.sequence import Sequence
-from src.artifacts.nanovllm_v2_5.attention.flashinfer_attention import Attention
+# from src.artifacts.nanovllm_v2_5.attention.flashinfer_attention import Attention
 
-from src.core.service_base import BaseService
-from src.core.artifact_base import Artifact
-import dataclasses
-
-
-@dataclasses.dataclass
-class Qwen3AttentionArtifacts:
-    attention: Artifact
-
-    @classmethod
-    def init_new(
-        cls,
-        model_runner, 
-        config
-    ):
-        
-        tp_size = dist.get_world_size()
-        num_heads = config.num_attention_heads // tp_size
-        num_kv_heads = config.num_key_value_heads // tp_size
-        head_dim = config.head_dim
-        scaling = head_dim**-0.5
-        return cls(
-            attention=Attention(
-                model_runner, 
-                num_heads,
-                head_dim,
-                scaling,
-                num_kv_heads,
-            )
-        )
-
-    def register(self, service: BaseService):
-        if "attention" in service.name.lower():
-            self.attention._register_method("attn", service)
-        if "runner" in service.name.lower():    
-            self.attention._register_method("init_forward_metadata_capture_cuda_graph", service)
-            self.attention._register_method("init_forward_metadata_replay_cuda_graph", service)
-            self.attention._register_method("update_indices", service)
-            self.attention._register_method("prepare_metadata_for_attn_decode", service)
-            self.attention._register_method("prepare_metadata_for_attn_prefill", service)
+from src.core.service import BaseService
+from src.core.artifact import Artifact
 
 
-class Qwen3Attention(nn.Module, BaseService):
+# import dataclasses
+# @dataclasses.dataclass
+# class Qwen3AttentionArtifacts:
+#     attention: Artifact
+
+#     @classmethod
+#     def init_new(
+#         cls,
+#         model_runner, 
+#         config
+#     ):
+
+#         tp_size = dist.get_world_size()
+#         num_heads = config.num_attention_heads // tp_size
+#         num_kv_heads = config.num_key_value_heads // tp_size
+#         head_dim = config.head_dim
+#         scaling = head_dim**-0.5
+#         return cls(
+#             attention=Attention(
+#                 model_runner, 
+#                 num_heads,
+#                 head_dim,
+#                 scaling,
+#                 num_kv_heads,
+#             )
+#         )
+
+#     def register(self, service: BaseService):
+#         if "attention" in service.name.lower():
+#             self.attention._register_method("attn", service)
+#         if "runner" in service.name.lower():    
+#             self.attention._register_method("init_forward_metadata_capture_cuda_graph", service)
+#             self.attention._register_method("init_forward_metadata_replay_cuda_graph", service)
+#             self.attention._register_method("update_indices", service)
+#             self.attention._register_method("prepare_metadata_for_attn_decode", service)
+#             self.attention._register_method("prepare_metadata_for_attn_prefill", service)
+
+
+class Qwen3Attention(Artifact, nn.Module):
 
     @property
     def name(self):
@@ -65,7 +65,6 @@ class Qwen3Attention(nn.Module, BaseService):
     
     def __init__(
         self,
-        attention_backend, 
         hidden_size: int,
         num_heads: int,
         num_kv_heads: int,
@@ -77,7 +76,6 @@ class Qwen3Attention(nn.Module, BaseService):
         rope_scaling: tuple | None = None,
     ) -> None:
         super().__init__()
-        BaseService.__init__(self)
         
         self.k_cache = self.v_cache = torch.tensor([])
         
@@ -92,15 +90,6 @@ class Qwen3Attention(nn.Module, BaseService):
         self.q_size = self.num_heads * self.head_dim
         self.kv_size = self.num_kv_heads * self.head_dim
         self.scaling = self.head_dim**-0.5
-
-        # self.artifacts = Qwen3AttentionArtifacts.init_new(
-        #     self.num_heads,
-        #     self.head_dim,
-        #     self.scaling,
-        #     self.num_kv_heads,
-        # )
-        attention_backend.register(self)
-        # self.artifacts.register(self)
         
         self.qkv_proj = QKVParallelLinear(
             hidden_size,
@@ -177,12 +166,10 @@ class Qwen3DecoderLayer(nn.Module):
 
     def __init__(
         self,
-        attention_backend, 
         config: Qwen3Config,
     ) -> None:
         super().__init__()
         self.self_attn = Qwen3Attention(
-            attention_backend,
             hidden_size=config.hidden_size,
             num_heads=config.num_attention_heads,
             num_kv_heads=config.num_key_value_heads,
@@ -224,7 +211,6 @@ class Qwen3Model(nn.Module):
 
     def __init__(
         self,
-        attention_backend, 
         config: Qwen3Config,
     ) -> None:
         super().__init__()
@@ -233,7 +219,7 @@ class Qwen3Model(nn.Module):
             config.vocab_size, config.hidden_size
         )
         self.layers = nn.ModuleList(
-            [Qwen3DecoderLayer(attention_backend, config) for _ in range(config.num_hidden_layers)]
+            [Qwen3DecoderLayer(config) for _ in range(config.num_hidden_layers)]
         )
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -250,7 +236,7 @@ class Qwen3Model(nn.Module):
         return hidden_states
 
 
-class Qwen3ForCausalLM(nn.Module):
+class Qwen3ForCausalLM(Artifact, nn.Module):
     packed_modules_mapping = {
         "q_proj": ("qkv_proj", "q"),
         "k_proj": ("qkv_proj", "k"),
@@ -259,13 +245,13 @@ class Qwen3ForCausalLM(nn.Module):
         "up_proj": ("gate_up_proj", 1),
     }
 
-    def __init__(self, attention_backend, config: Qwen3Config) -> None:
+    def __init__(self, config: Qwen3Config) -> None:
         super().__init__()
-        self.model = Qwen3Model(attention_backend, config)
+        self.model = Qwen3Model(config)
         self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
         if config.tie_word_embeddings:
             self.lm_head.weight.data = self.model.embed_tokens.weight.data
-
+    
     def forward(
         self,
         input_ids: torch.Tensor,

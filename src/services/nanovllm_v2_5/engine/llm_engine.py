@@ -1,5 +1,6 @@
 import atexit
 from dataclasses import fields
+import os
 from time import perf_counter
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer
@@ -10,53 +11,39 @@ from ..sampling_params import SamplingParams
 from .sequence import Sequence
 from .scheduler import Scheduler
 from src.services.nanovllm_v2_5.model_runner import ModelRunner
+from src.core.service import BaseService
 
+DUMMY_CREATION = os.getenv("DUMMY_CREATION", False)
 
-class LLMEngine:
+class LLMEngine(BaseService):
 
     def __init__(self, model, **kwargs):
+        super().__init__()
         config_fields = {field.name for field in fields(Config)}
         config_kwargs = {k: v for k, v in kwargs.items() if k in config_fields}
-        self.config = config = Config(model, **config_kwargs)
-        self.ps = []
-        self.events = []
-        ctx = mp.get_context("spawn")
-        for i in range(1, config.tensor_parallel_size):
-            event = ctx.Event()
-            process = ctx.Process(target=ModelRunner, args=(config, i, event))
-            process.start()
-            self.ps.append(process)
-            self.events.append(event)
-        self.model_runner = ModelRunner(config, 0, self.events)
-        self.tokenizer = AutoTokenizer.from_pretrained(config.model, use_fast=True)
-        config.eos = self.tokenizer.eos_token_id
-        self.scheduler = Scheduler(config)
-        atexit.register(self.exit)
-
-    def exit(self):
-        self.model_runner.call("exit")
-        del self.model_runner
-        for p in self.ps:
-            p.join()
+        self.config = Config(model, **config_kwargs)
+        if not DUMMY_CREATION:
+            self.__post_init__()
+    
+    def __post_init__(self):
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config.model, use_fast=True)
+        self.config.eos = self.tokenizer.eos_token_id
 
     def add_request(self, prompt: str | list[int], sampling_params: SamplingParams):
         if isinstance(prompt, str):
             prompt = self.tokenizer.encode(prompt)
         seq = Sequence.from_prompt(prompt, sampling_params, self.config.kvcache_block_size)
-        self.scheduler.add(seq)
+        self.add(seq)
 
     def step(self):
-        seqs, is_prefill = self.scheduler.schedule()
+        seqs, is_prefill = self.schedule()
         t = perf_counter()
-        token_ids = self.model_runner.call("run", seqs, is_prefill)
+        token_ids = self.run(seqs, is_prefill)
         excution_time = perf_counter() - t
-        self.scheduler.postprocess(seqs, token_ids)
+        self.postprocess(seqs, token_ids)
         outputs = [(seq.seq_id, seq.completion_token_ids) for seq in seqs if seq.is_finished]
         num_tokens = sum(len(seq) for seq in seqs) if is_prefill else -len(seqs)
         return outputs, num_tokens, excution_time
-
-    def is_finished(self):
-        return self.scheduler.is_finished()
 
     def generate(
         self,

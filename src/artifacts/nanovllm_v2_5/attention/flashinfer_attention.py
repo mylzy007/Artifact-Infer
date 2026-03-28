@@ -19,8 +19,8 @@ from typing import Optional, Union
 from src.services.nanovllm_v2_5.utils.context import get_context
 from src.services.nanovllm_v2_5.engine.sequence import Sequence
 
-from src.core.artifact_base import Artifact
-from src.core.service_base import BaseService
+from src.core.artifact import Artifact
+from src.core.service import BaseService
 
 from functools import partial 
 from dataclasses import dataclass
@@ -65,28 +65,24 @@ def store_kvcache(key: torch.Tensor, value: torch.Tensor, k_cache: torch.Tensor,
     store_kvcache_kernel[(N,)](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
 
 
-class Attention(nn.Module, Artifact):
-
+class Attention(Artifact, nn.Module):
     @property
     def name(self):
         return "VanillaAttention"
     
     def __init__(
-        self,
-        model_runner, 
-        num_heads,
-        head_dim,
-        scale,
-        num_kv_heads,
+        self, config
     ):
         super().__init__()
-        Artifact.__init__(self)
-        print("initializing attention")
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-        self.scale = scale
-        self.num_kv_heads = num_kv_heads
-        self.model_runner = model_runner
+        self.device = torch.device("cuda")
+        self.config = config
+        self.__post__init__()
+    
+    def __post__init__(self):
+        self.num_heads = self.config.hf_config.num_attention_heads // self.config.tensor_parallel_size
+        self.head_dim = self.config.hf_config.head_dim
+        self.scale = self.head_dim ** -0.5
+        self.num_kv_heads = self.config.hf_config.num_key_value_heads // self.config.tensor_parallel_size
 
         global global_workspace_buffer
         if global_workspace_buffer is None:
@@ -95,34 +91,34 @@ class Attention(nn.Module, Artifact):
             )
         self.workspace_buffer = global_workspace_buffer
         
-        max_bs = min(model_runner.config.max_num_seqs, 512)
-        max_seq_len = model_runner.config.max_model_len
+        max_bs = min(self.config.max_num_seqs, 512)
+        max_seq_len = self.config.max_model_len
         
         self.qo_indptr = torch.zeros(
-            (max_bs + 1, ), dtype=torch.int32, device=model_runner.device
+            (max_bs + 1, ), dtype=torch.int32, device=self.device
         )
         
         self.kv_indptr = torch.zeros(
-            (max_bs + 1,), dtype=torch.int32, device=model_runner.device
+            (max_bs + 1,), dtype=torch.int32, device=self.device
         )
         
         self.kv_last_page_len = torch.ones(
-            (max_bs,), dtype=torch.int32, device=model_runner.device
+            (max_bs,), dtype=torch.int32, device=self.device
         )
         
         # packed_custom_mask_buf when cudagraph is enabled
         self.custom_mask_buf = torch.zeros(
-            (model_runner.config.hf_config.max_position_embeddings * max_bs // 8,), dtype=torch.uint8, device=model_runner.device
+            (self.config.hf_config.max_position_embeddings * max_bs // 8,), dtype=torch.uint8, device=self.device
         )
         
         self.mask_indptr_buf = torch.zeros(
-            max_bs + 1, dtype=torch.int32, device=model_runner.device
+            max_bs + 1, dtype=torch.int32, device=self.device
         )
         
         self.cuda_graph_kv_indices = torch.zeros(
-            model_runner.config.hf_config.max_position_embeddings * max_bs, 
+            self.config.hf_config.max_position_embeddings * max_bs, 
             dtype=torch.int32,
-            device=model_runner.device
+            device=self.device
         ) 
         
         self.prefill_wrapper_paged = BatchPrefillWithPagedKVCacheWrapper(

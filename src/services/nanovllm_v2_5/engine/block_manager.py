@@ -3,6 +3,7 @@ import xxhash
 import numpy as np
 
 from .sequence import Sequence
+from src.core.service import BaseService
 
 class Block:
 
@@ -22,9 +23,10 @@ class Block:
         self.token_ids = []
 
 
-class BlockManager:
+class BlockManager(BaseService):
 
     def __init__(self, num_blocks: int, block_size: int):
+        super().__init__()
         assert num_blocks > 0
         self.block_size = block_size
         self.blocks: list[Block] = [Block(i) for i in range(num_blocks)]
