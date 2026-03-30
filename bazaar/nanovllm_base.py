@@ -7,11 +7,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 from src.core.orchestrator import DistOrchestrator
 
-from src.services.nanovllm_v2_5.engine.llm_engine import LLMEngine
-from src.services.nanovllm_v2_5.engine.scheduler import Scheduler
-from src.services.nanovllm_v2_5.engine.block_manager import BlockManager
-from src.services.nanovllm_v2_5.model_runner import ModelRunner
-from src.services.nanovllm_v2_5 import SamplingParams
+from workshop.nanovllm_base.services.engine.llm_engine import LLMEngine 
+from workshop.nanovllm_base.services.engine.scheduler import Scheduler
+from workshop.nanovllm_base.artifacts.block_mngr.block_manager import BlockManager
+from workshop.nanovllm_base.services.model_runner import ModelRunner
+from workshop.nanovllm_base.services.sampling_params import SamplingParams
 
 
 def combine(**kwargs):
@@ -43,7 +43,5 @@ def combine(**kwargs):
     orch.register(block_manager, "deallocate", scheduler)
     
     orch.finalize()
-    
-    print(engine._cells["can_allocate"].origin.name)
-    
+        
     return engine, SamplingParams
