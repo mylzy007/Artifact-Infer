@@ -10,7 +10,7 @@ class Config:
     max_num_batched_tokens: int = 262144
     max_num_seqs: int = 128
     lazy_max_num_seqs: int = -1
-    max_model_len: int = 32768
+    max_model_len: int = 40960
     gpu_memory_utilization: float = 0.8
     tensor_parallel_size: int = 1
     enforce_eager: bool = False

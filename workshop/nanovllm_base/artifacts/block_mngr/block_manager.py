@@ -34,6 +34,13 @@ class BlockManager(BaseService):
         self.free_block_ids: deque[int] = deque(range(num_blocks))
         self.used_block_ids: set[int] = set()
     
+    def reset(self):
+        num_blocks = len(self.blocks)
+        self.hash_to_block_id.clear()
+        [Block(i) for i in range(num_blocks)]
+        self.free_block_ids = deque(range(num_blocks))
+        self.used_block_ids = set()
+    
     @classmethod
     def compute_hash(cls, token_ids: list[int], prefix: int = -1):
         h = xxhash.xxh64()
@@ -46,6 +53,7 @@ class BlockManager(BaseService):
         block = self.blocks[block_id]
         assert block.ref_count == 0
         block.reset()
+        assert block_id in self.free_block_ids
         self.free_block_ids.remove(block_id)
         self.used_block_ids.add(block_id)
         return self.blocks[block_id]
@@ -94,7 +102,7 @@ class BlockManager(BaseService):
 
     def can_append(self, seq: Sequence) -> bool:
         return len(self.free_block_ids) >= (len(seq) % self.block_size == 1)
-
+    
     def may_append(self, seq: Sequence):
         block_table = seq.block_table
         # print([self.blocks[index].hash for index in block_table])

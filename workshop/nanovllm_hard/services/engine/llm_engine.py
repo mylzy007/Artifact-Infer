@@ -95,7 +95,8 @@ class LLMEngine(BaseService):
                 })
             for seq_id, token_ids, logits in output:
                 outputs[seq_id] = (token_ids, logits)
-            pbar.update(1)
+            if use_tqdm:
+                pbar.update(1)
             if pbar.n == record_step:
                 record_throughput = int(decode_throughput)
         # self.model_runner.call("save_num_blocks")
@@ -104,7 +105,7 @@ class LLMEngine(BaseService):
         #     self.model_runner.call("save_num_topp")
         #     self.model_runner.call("reset")
         # self.cur_step = 32
-        
+        self.reset_blocks()
         self.log_collector.save(self.config.log_path)
         outputs = [outputs[seq_id] for seq_id in sorted(outputs)]
         outputs = [{"text": self.tokenizer.decode(token_ids), "record_throughput": record_throughput, "token_ids": token_ids, "logits": logits} for token_ids, logits in outputs]

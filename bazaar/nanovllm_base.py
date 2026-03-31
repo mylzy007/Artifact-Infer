@@ -41,6 +41,7 @@ def combine(**kwargs):
     orch.register(block_manager, "can_append", scheduler)
     orch.register(block_manager, "may_append", scheduler)
     orch.register(block_manager, "deallocate", scheduler)
+    orch.register(block_manager, "reset", engine)
     
     orch.finalize()
         

@@ -90,8 +90,10 @@ class LLMEngine(BaseService):
                 })
             for seq_id, token_ids, logits in output:
                 outputs[seq_id] = (token_ids, logits)
+        if use_tqdm:
             pbar.update(1)            
         # NOTE
+        self.reset_blocks()
         # if self.config.if_log_num_topp:
         #     self.model_runner.call("save_num_topp")
         #     self.model_runner.call("save_lse_log")

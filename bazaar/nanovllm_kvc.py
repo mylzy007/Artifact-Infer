@@ -48,6 +48,7 @@ def combine(**kwargs):
     # in the unified top K selection, since all model_runner intances have same budget,
     # so we need to update the block allocation in the rank0 modelrunner 
     orch.register(block_manager, "update_blocks_post_compression", model_runner)
+    orch.register(block_manager, "reset_blocks", engine)
     
     query_block_manager = orch.add(QueryBlockManager(config.max_num_seqs, config.query_window_size))
 

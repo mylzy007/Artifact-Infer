@@ -42,6 +42,12 @@ class BlockManager(BaseService):
         self.free_block_ids: deque[int] = deque(range(num_blocks))
         # during the engine running, some block will be released head by head, when all heads are released, the block can be reused
         self.released_block_ids: torch.Tensor = torch.zeros((num_blocks,), dtype=torch.uint8, device="cpu")
+
+    def reset_blocks(self):
+        num_blocks = len(self.blocks)
+        [Block(i) for i in range(num_blocks)]
+        self.free_block_ids = deque(range(num_blocks))
+        self.used_block_ids = set()
     
     def _allocate_block(self, block_id: int) -> Block:
         block = self.blocks[block_id]

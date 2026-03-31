@@ -9,7 +9,7 @@ class Config:
     log_path: str = "./no_compress_logs"
     max_num_batched_tokens: int = 262144
     max_num_seqs: int = 64
-    max_model_len: int = 32768
+    max_model_len: int = 40960
     gpu_memory_utilization: float = 0.80
     tensor_parallel_size: int = 1
     enforce_eager: bool = False

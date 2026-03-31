@@ -34,6 +34,12 @@ class BlockManager(BaseService):
         self.free_block_ids: deque[int] = deque(range(num_blocks))
         self.used_block_ids: set[int] = set()
     
+    def reset_blocks(self):
+        num_blocks = len(self.blocks)
+        [Block(i) for i in range(num_blocks)]
+        self.free_block_ids = deque(range(num_blocks))
+        self.used_block_ids = set()
+    
     def _allocate_block(self, block_id: int) -> Block:
         block = self.blocks[block_id]
         block.reset()
