@@ -1,7 +1,5 @@
-<div align="center">
-  <img src="assets/logo.png" width="150" />
-  <h1>Artifact-Infer</h1>
-</div>
+# Artifact-Infer
+
 Yet another inference engine friendly for beginners and users. 
 
 ## Design Ideas
