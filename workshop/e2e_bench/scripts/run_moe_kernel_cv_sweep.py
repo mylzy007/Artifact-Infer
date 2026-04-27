@@ -109,6 +109,12 @@ def _build_command(args: argparse.Namespace, cv: float, out_path: Path) -> list[
         "--output-json",
         str(out_path),
     ]
+    if args.model_config:
+        cmd += ["--model-config", str(args.model_config)]
+    if args.num_moe_layers is not None:
+        cmd += ["--num-moe-layers", str(args.num_moe_layers)]
+    if args.routing_trace:
+        cmd += ["--routing-trace", str(args.routing_trace)]
     if args.allow_non_modular:
         cmd.append("--allow-non-modular")
     return cmd
@@ -188,6 +194,43 @@ def _parse_args() -> argparse.Namespace:
         help="Pass through to the kernel benchmark for debugging only",
     )
     parser.add_argument(
+        "--model",
+        type=str,
+        choices=["custom", "deepseek-v2-lite", "qwen3", "qwen3.5"],
+        default="custom",
+        help=(
+            "Convenience preset that fills --num-experts/--topk/--hidden-size/"
+            "--intermediate-size/--num-moe-layers from a model's config. "
+            "'custom' (default) honours individual flags. Other presets read "
+            "from the local checkpoint dirs under /home/yyx/models/<name>/."
+        ),
+    )
+    parser.add_argument(
+        "--model-config",
+        type=Path,
+        default=None,
+        help=(
+            "Forward to the kernel bench's --model-config: a path to a "
+            "HuggingFace config.json. Overrides individual model flags when "
+            "they're left at the kernel bench default values."
+        ),
+    )
+    parser.add_argument(
+        "--num-moe-layers",
+        type=int,
+        default=None,
+        help="Forward to the kernel bench's --num-moe-layers (stack all layers).",
+    )
+    parser.add_argument(
+        "--routing-trace",
+        type=Path,
+        default=None,
+        help=(
+            "Forward to the kernel bench's --routing-trace: capture file from "
+            "capture_routing_trace.py to drive routing per layer."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Only print commands; do not execute them",
@@ -195,9 +238,70 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+_MODEL_PRESETS: dict[str, dict] = {
+    "deepseek-v2-lite": {
+        # current defaults match this; kept here for clarity.
+        "num_experts": 64,
+        "topk": 6,
+        "hidden_size": 2048,
+        "intermediate_size": 1408,
+        "config_path": None,  # use individual flags
+        "num_moe_layers": 26,
+    },
+    "qwen3": {
+        "num_experts": 128,
+        "topk": 8,
+        "hidden_size": 2048,
+        "intermediate_size": 768,
+        "config_path": "/home/yyx/models/Qwen3-30B-A3B/config.json",
+        "num_moe_layers": 48,
+    },
+    "qwen3.5": {
+        "num_experts": 256,
+        "topk": 8,
+        "hidden_size": 2048,
+        "intermediate_size": 512,
+        "config_path": "/home/yyx/models/Qwen3.5-35B-A3B/config.json",
+        # 40 main layers + 1 MTP head; the kernel bench will inflate this
+        # automatically when --model-config is passed, but we set it
+        # explicitly for the synthetic path too.
+        "num_moe_layers": 41,
+    },
+}
+
+
+def _apply_preset(args: argparse.Namespace) -> None:
+    """Apply --model preset onto args (only fields the user did not override)."""
+    if args.model == "custom":
+        return
+    preset = _MODEL_PRESETS[args.model]
+    parser_defaults = {
+        "num_experts": 64,
+        "topk": 6,
+        "hidden_size": 2048,
+        "intermediate_size": 1408,
+    }
+    for k, v in parser_defaults.items():
+        if getattr(args, k) == v:
+            setattr(args, k, preset[k])
+    if args.num_moe_layers is None and preset.get("num_moe_layers"):
+        args.num_moe_layers = preset["num_moe_layers"]
+    if args.model_config is None and preset.get("config_path"):
+        cfg_path = Path(preset["config_path"])
+        if cfg_path.exists():
+            args.model_config = cfg_path
+
+
 def main() -> None:
     args = _parse_args()
+    _apply_preset(args)
     cv_values = _parse_float_list(args.cv_values)
+    print(
+        f"[wrapper] model={args.model} num_experts={args.num_experts} "
+        f"topk={args.topk} hidden={args.hidden_size} "
+        f"moe_int={args.intermediate_size} num_moe_layers={args.num_moe_layers} "
+        f"routing_trace={args.routing_trace}"
+    )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
