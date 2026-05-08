@@ -470,6 +470,17 @@ def main() -> None:
         help="(hf mode) prompt to tokenise; padded/truncated to --max-tokens",
     )
     parser.add_argument(
+        "--prompt-file",
+        type=str,
+        default=None,
+        help=(
+            "(hf mode) read the prompt text from this file instead of "
+            "--prompt. Useful for long, multi-line workloads such as the "
+            "concatenated AIME prefill produced by "
+            "generate_aime_responses.py."
+        ),
+    )
+    parser.add_argument(
         "--max-tokens",
         type=int,
         default=1024,
@@ -513,10 +524,20 @@ def main() -> None:
     ]
 
     if args.mode == "hf":
+        if args.prompt_file:
+            prompt_text = Path(args.prompt_file).read_text(encoding="utf-8")
+            prompt_provenance = f"file:{args.prompt_file}"
+            print(
+                f"[hf] using prompt from {args.prompt_file} "
+                f"({len(prompt_text)} chars)"
+            )
+        else:
+            prompt_text = args.prompt
+            prompt_provenance = "cli:--prompt"
         ids_list, wts_list = capture_hf(
             model_dir=model_dir,
             dims=dims,
-            prompt=args.prompt,
+            prompt=prompt_text,
             max_tokens=args.max_tokens,
             dtype=dtype,
             device_map=args.device_map,
@@ -530,7 +551,8 @@ def main() -> None:
             extra={
                 "capture_mode": "hf",
                 "prompt_tokens": args.max_tokens,
-                "prompt_excerpt": args.prompt[:120],
+                "prompt_provenance": prompt_provenance,
+                "prompt_excerpt": prompt_text[:200],
             },
         )
     else:

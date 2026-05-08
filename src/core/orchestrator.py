@@ -70,7 +70,8 @@ class RegistryOrchestrator:
 
     def _propagate(self, service: Artifact, local_alias: str, origin_alias: str, cell: Cell):
         # Bind reference
-        print(f"Propagating {local_alias} from {cell.origin.name} to {service.name} as {origin_alias} with cell: {id(cell)}")
+        origin_name = cell.origin.name if hasattr(cell, "origin") else "<state>"
+        print(f"Propagating {local_alias} from {origin_name} to {service.name} as {origin_alias} with cell: {id(cell)}")
         service._cells[local_alias] = cell
         service._state_map[local_alias] = origin_alias
         

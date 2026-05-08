@@ -88,7 +88,50 @@ hooks each MoE block during a real prefill and writes per-layer
 - (Created at runtime, not in this workspace)
 `/home/yyx/personal/inference/vllm-bench/.venv/` — Python 3.12 venv with
 `vllm 0.19.1rc1.dev180+gad720aefe.precompiled`, `torch 2.11.0+cu130`,
-`triton 3.6.0`, `accelerate 1.13.0`, etc.
+`triton 3.6.0`, `accelerate 1.13.0`, `transformers 4.57.6`, etc. The
+vLLM kernel bench, the AIME workload generator, and the v4 HF MoE bench
+all run here.
+- (Created at runtime, not in this workspace)
+`/home/yyx/personal/inference/vllm-bench-hf5/.venv/` — separate Python
+3.12 venv with `transformers 5.6.2` + `torch 2.11.0+cu130` for the v5
+native MoE comparison (REPORT.md §4h.1). Required because vLLM pins
+`transformers >= 4.56, < 5`, so v5 can't be installed in the main
+bench venv. Set up with:
+```bash
+uv venv --python 3.12 /home/yyx/personal/inference/vllm-bench-hf5/.venv
+source /home/yyx/personal/inference/vllm-bench-hf5/.venv/bin/activate
+uv pip install --torch-backend=auto torch
+uv pip install "transformers==5.6.2" "accelerate>=1.0" safetensors
+```
+The `benchmark_hf_moe.py` script auto-detects the installed transformers
+major version and exposes `--implementation {eager,grouped_mm,batched_mm}`
+when v5 is available.
+- (Created at runtime, not in this workspace)
+`/home/yyx/personal/inference/vllm-bench-flashinfer/.venv/` — separate
+Python 3.12 venv used only for the FlashInfer `cutlass_fused_moe`
+benchmark (REPORT.md §4i). Pinned to `flashinfer-python==0.6.9` +
+`torch 2.11.0+cu130`. FlashInfer JIT-compiles the SM89 module on first
+run (~9 minutes; cached under `~/.cache/flashinfer/0.6.9/89/`) and
+**requires** a CUDA toolkit ≥ 12.0 to be on `PATH` because the system
+`/usr/bin/nvcc` is 11.5 and lacks `CUtensorMap` / `CUlaunchConfig`
+declarations. Set up + invoke with:
+```bash
+uv venv --python 3.12 /home/yyx/personal/inference/vllm-bench-flashinfer/.venv
+source /home/yyx/personal/inference/vllm-bench-flashinfer/.venv/bin/activate
+uv pip install --index-url https://download.pytorch.org/whl/cu130 torch==2.11.0
+uv pip install numpy flashinfer-python
+
+# Always export these before running the bench (otherwise JIT picks /usr/bin/nvcc):
+export CUDA_HOME=/usr/local/cuda-13.0
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+
+CUDA_VISIBLE_DEVICES=0 python workshop/e2e_bench/scripts/benchmark_flashinfer_moe.py \
+    --model-config /home/yyx/models/Qwen3-30B-A3B/config.json \
+    --tokens 4096 --num-layers 48 --warmup 2 --iters 5 \
+    --routing oracle_uniform --autotune \
+    --output /home/yyx/personal/inference/vllm-bench/results/qwen3_heavy/flashinfer_qwen3_M4096.jsonl
+```
 - (Created at runtime, in the vLLM source tree)
 `/home/yyx/personal/inference/vllm/tests/kernels/moe/modular_kernel_tools/benchmark_eplb_multigpu.py`
 — the benchmark itself, extracted from `e2e_artifact.diff` and extended
