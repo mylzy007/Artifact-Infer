@@ -1,0 +1,35 @@
+{
+  "dataset": {
+    "source": "/home/lzy/datasets/moe_benchmarks/gsm8k/main/test-00000-of-00001.parquet",
+    "prepared_path": "/home/lzy/Artifact-Infer/eval_results/gsm_stage01_20260518_210739/prepared/gsm8k.stage01.parquet",
+    "num_rows": 256
+  },
+  "prompt_token_stats": {
+    "num_rows": 256,
+    "min": 60,
+    "p50": 93.0,
+    "p90": 129,
+    "p95": 139,
+    "p99": 162,
+    "max": 170,
+    "mean": 96.86328125
+  },
+  "batch_and_buffer_notes": {
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 512,
+    "effective_prefill_batch_at_p50_prompt": 5,
+    "effective_prefill_batch_at_p95_prompt": 3,
+    "ep_ll_auto_m_max_for_qwen3_topk8_num_experts128": 128,
+    "ep_ll_effective_m_max": 128,
+    "ep_ll_no_drop_margin_note": "M_max equal to max_num_batched_tokens is the strict no-drop setting for a single expert bucket, assuming each token has unique top-k experts."
+  },
+  "notes": [],
+  "runner_command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.run_moe_placement_experiments --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/eval_results/gsm_stage01_20260518_210739/prepared/gsm8k.stage01.parquet --dataset-label gsm8k --world-sizes 8 --tp-size 1 --impls ep_ht --profile-impl ep_ht --placements contiguous,round_robin,fixed_random_shuffle,load_balanced_greedy_with_locality_tiebreak,communication_aware_greedy --num-problems 256 --max-tokens 128 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.9 --enforce-eager 1 --moe-ll-overflow-policy error --gpu-ids 0,1,2,3,4,5,6,7 --seed 1234 --base-master-port 29600 --port-retries 4 --timeout-s 604800 --experiment-name gsm_stage01 --run-id 20260518_210739 --output-root /home/lzy/Artifact-Infer/eval_results --moe-ll-m-max 128",
+  "stage_design": {
+    "stage0": "profile contiguous with the first requested implementation once per world size",
+    "stage1": "generate static placements from profile and evaluate requested implementations",
+    "world_sizes": "8",
+    "impls": "ep_ht",
+    "placements": "contiguous,round_robin,fixed_random_shuffle,load_balanced_greedy_with_locality_tiebreak,communication_aware_greedy"
+  }
+}

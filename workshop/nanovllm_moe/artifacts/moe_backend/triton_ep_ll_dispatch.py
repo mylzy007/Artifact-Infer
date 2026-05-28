@@ -40,6 +40,8 @@ def _ep_ll_dispatch_kernel(
     send_buf_ptr,           # [N, E_local, M_max, H]  bf16   — flat
     original_indices_ptr,   # [N, E_local, M_max, 2]  int32  — flat
     local_counts_ptr,       # [N, E_local]            int32  — must be zero
+    expert_to_rank_ptr,     # [E_global]              int32
+    expert_to_local_ptr,    # [E_global]              int32
     T,
     K: tl.constexpr,
     H: tl.constexpr,
@@ -64,8 +66,8 @@ def _ep_ll_dispatch_kernel(
         for k_int32 in tl.range(0, K, num_stages=2):
             k = k_int32.to(tl.int64)
             eid = tl.load(topk_ids_ptr + t * K + k)
-            target_rank = eid // E_local
-            target_local = eid - target_rank * E_local
+            target_rank = tl.load(expert_to_rank_ptr + eid)
+            target_local = tl.load(expert_to_local_ptr + eid)
 
             # Atomic-fetch-add returns the OLD counter value = our slot.
             # Bump first so the counter reflects the true count even if we drop
@@ -96,6 +98,8 @@ def triton_ep_ll_dispatch(
     send_buf: torch.Tensor,         # [N, E_local, M_max, H]    bf16   (in/out)
     original_indices: torch.Tensor, # [N, E_local, M_max, 2]    int32  (out, must be pre-filled with -1)
     local_counts: torch.Tensor,     # [N, E_local]              int32  (out, must be pre-zeroed)
+    expert_to_rank: torch.Tensor,   # [E_global]                int32
+    expert_to_local: torch.Tensor,  # [E_global]                int32
     M_max: int,
     E_local: int,
 ) -> None:
@@ -111,6 +115,8 @@ def triton_ep_ll_dispatch(
     assert send_buf.dtype == torch.bfloat16
     assert original_indices.dtype == torch.int32
     assert local_counts.dtype == torch.int32
+    assert expert_to_rank.dtype == torch.int32
+    assert expert_to_local.dtype == torch.int32
 
     T, H = hidden_states.shape
     K = topk_ids.shape[1]
@@ -132,6 +138,8 @@ def triton_ep_ll_dispatch(
         send_buf,
         original_indices,
         local_counts,
+        expert_to_rank,
+        expert_to_local,
         T,
         K=K,
         H=H,

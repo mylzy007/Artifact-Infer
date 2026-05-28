@@ -75,6 +75,11 @@ class Dispatch(Artifact, nn.Module):
         K = self.top_k
         E = self.num_experts
         BLOCK_M = self.block_size_m
+        if T > self.topk_ids_buf.size(0):
+            raise RuntimeError(
+                f"Dispatch got T={T}, exceeding topk buffer capacity "
+                f"{self.topk_ids_buf.size(0)}"
+            )
 
         # sgl_kernel.topk_softmax requires fp32 weights and int32 ids.
         topk_weights = self.topk_weights_buf[:T]   # [T, K]  fp32

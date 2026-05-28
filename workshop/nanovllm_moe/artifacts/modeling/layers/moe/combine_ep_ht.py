@@ -15,13 +15,20 @@ Steps:
 """
 from __future__ import annotations
 
+import os
+
 import torch
 import torch.distributed as dist
 from torch import nn
 
 from src.core.artifact import Artifact
 from workshop.nanovllm_moe.artifacts.modeling.layers.moe.dispatch_ep_ht import TokMetaEPHT
-from workshop.nanovllm_moe.services.utils.parallel import get_ep_group, get_ep_world_size
+from workshop.nanovllm_moe.services.utils.parallel import (
+    get_ep_group,
+    get_ep_world_size,
+    get_runtime_mode,
+    get_tp_group,
+)
 
 
 class CombineEPHT(Artifact, nn.Module):
@@ -34,6 +41,11 @@ class CombineEPHT(Artifact, nn.Module):
         self.H = int(hidden_size)
         self.K = int(top_k)
         self.world_size = get_ep_world_size() if dist.is_initialized() else 1
+        self.runtime_mode = get_runtime_mode()
+
+    def _debug_sync(self, stage: str) -> None:
+        if os.environ.get("MOE_EPHT_DEBUG_SYNC", "0") == "1":
+            torch.cuda.synchronize()
 
     def forward(
         self,
@@ -42,7 +54,9 @@ class CombineEPHT(Artifact, nn.Module):
     ) -> torch.Tensor:
         N = self.world_size
         H = self.H
-        K = self.K
+        # Phase 4 P1: when router K_eff < self.K, tok_meta.topk_weights has K_eff
+        # columns. Read the actual K from tok_meta so combine matches dispatch.
+        K = int(tok_meta.topk_weights.shape[1])
         T = tok_meta.T_local
         device = expert_out.device
         dtype = expert_out.dtype
@@ -68,14 +82,25 @@ class CombineEPHT(Artifact, nn.Module):
             )
         else:
             rev.copy_(expert_out)
+        self._debug_sync("reverse_a2a")
 
-        # 2. Un-permute. `sort_perm` maps sorted-position -> original (t*K + k).
-        # rev[i] corresponds to sorted-position i. Scatter into [T*K, H] at sort_perm[i].
-        unperm = torch.empty(T * K, H, dtype=dtype, device=device)
-        unperm[tok_meta.sort_perm] = rev
+        # owner_local_ep always combines locally on the original token owner.
+        if self.runtime_mode == "vllm_dp_ep" and not tok_meta.is_source_leader:
+            out = torch.empty(T, H, dtype=dtype, device=device)
+        else:
+            # zeros (not empty): when Phase 4 drop is enabled, sort_perm only
+            # covers kept (token, expert) positions and the remaining slots must
+            # contribute 0 to the weighted sum. When drop is off, sort_perm
+            # spans every (t, k) and the zero init is overwritten in full.
+            unperm = torch.zeros(T * K, H, dtype=dtype, device=device)
+            unperm[tok_meta.sort_perm] = rev
+            unperm_TKH = unperm.view(T, K, H)
+            weights = tok_meta.topk_weights.to(dtype).unsqueeze(-1)  # [T, K, 1]
+            out = (unperm_TKH * weights).sum(dim=1)                   # [T, H]
 
-        # 3. Weight-and-reduce: out[t] = sum_k topk_weights[t, k] * unperm[t*K + k].
-        unperm_TKH = unperm.view(T, K, H)
-        weights = tok_meta.topk_weights.to(dtype).unsqueeze(-1)  # [T, K, 1]
-        out = (unperm_TKH * weights).sum(dim=1)                   # [T, H]
+        # vllm_dp_ep: leader combines, then broadcasts within TP replica.
+        # owner_local_ep: tp=1, so no output broadcast is allowed or needed.
+        if self.runtime_mode == "vllm_dp_ep" and dist.is_initialized() and dist.get_world_size() > 1 and T > 0:
+            dist.broadcast(out, src=tok_meta.source_leader_global_rank, group=get_tp_group())
+        self._debug_sync("reduce")
         return out

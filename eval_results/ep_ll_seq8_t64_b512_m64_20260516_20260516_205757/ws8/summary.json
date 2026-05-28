@@ -1,0 +1,3081 @@
+{
+  "run_id": "20260516_205757_ws8",
+  "args": {
+    "python": "/home/lzy/miniconda3/envs/vllm/bin/python",
+    "cuda_home": "/usr/local/cuda-12.8",
+    "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+    "dataset_path": "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+    "gpu_ids": "0,1,2,3,4,5,6,7",
+    "gpus_per_job": 8,
+    "parallel_jobs": 1,
+    "world_size": 8,
+    "world_sizes": null,
+    "tp_size": 1,
+    "impls": "ep_ll_triton",
+    "placements": "contiguous,round_robin,fixed_random_shuffle,load_balanced_greedy_with_locality_tiebreak,communication_aware_greedy",
+    "seed": 1234,
+    "num_layers": -1,
+    "num_problems": 8,
+    "max_tokens": 64,
+    "scale_steps": null,
+    "max_model_len": 512,
+    "max_num_batched_tokens": 512,
+    "max_num_seqs": 8,
+    "gpu_memory_utilization": 0.85,
+    "enforce_eager": 1,
+    "moe_ll_overflow_policy": "drop",
+    "moe_ll_m_max": 64,
+    "base_master_port": 42100,
+    "port_retries": 5,
+    "timeout_s": 5400,
+    "run_id": "20260516_205757_ws8",
+    "experiment_name": null,
+    "output_root": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757",
+    "run_dir": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+    "dry_run": false,
+    "skip_profile": null
+  },
+  "gpu_groups": [
+    "0,1,2,3,4,5,6,7"
+  ],
+  "profile": {
+    "name": "ep_ll_triton_contiguous_ws8_tp1",
+    "cmd": [
+      "/home/lzy/miniconda3/envs/vllm/bin/python",
+      "-m",
+      "eval.test_bazaar_moe",
+      "--model-path",
+      "/home/lzy/models/Qwen3-30B-A3B",
+      "--dataset-path",
+      "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+      "--world-size",
+      "8",
+      "--tp-size",
+      "1",
+      "--master-port",
+      "42100",
+      "--moe-impl",
+      "ep_ll_triton",
+      "--moe-expert-placement",
+      "contiguous",
+      "--moe-expert-placement-seed",
+      "1234",
+      "--num-layers",
+      "-1",
+      "--num-problems",
+      "8",
+      "--max-tokens",
+      "64",
+      "--max-model-len",
+      "512",
+      "--max-num-batched-tokens",
+      "512",
+      "--max-num-seqs",
+      "8",
+      "--gpu-memory-utilization",
+      "0.85",
+      "--enforce-eager",
+      "1",
+      "--moe-ll-overflow-policy",
+      "drop",
+      "--moe-profile-routing",
+      "1",
+      "--output-dir",
+      "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+      "--moe-ll-m-max",
+      "64"
+    ],
+    "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/ep_ll_triton_contiguous_ws8_tp1.log",
+    "timeout_s": 5400,
+    "output_prefix": "aime24_ep_ll_triton_contiguous_tp1_ep8_eager1",
+    "impl": "ep_ll_triton",
+    "placement": "contiguous",
+    "world_size": 8,
+    "tp_size": 1,
+    "gpu_group": "0,1,2,3,4,5,6,7",
+    "port_retries": 5,
+    "env": {
+      "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+      "MOE_PROFILE_RUN_ID": "20260516_205757_ws8_profile",
+      "PYTHONUNBUFFERED": "1",
+      "CUDA_HOME": "/usr/local/cuda-12.8",
+      "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+      "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/flashinfer_workspace"
+    },
+    "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 8 --tp-size 1 --master-port 42100 --moe-impl ep_ll_triton --moe-expert-placement contiguous --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 8 --max-tokens 64 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 1 --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --moe-ll-m-max 64",
+    "exit_code": 0,
+    "pass": true,
+    "timed_out": false,
+    "elapsed_s": 172.3440670967102,
+    "port_retries_used": 0,
+    "profile_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+    "result_json_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_contiguous_tp1_ep8_eager1.json",
+    "metrics": {
+      "prefill_tokens": 534,
+      "prefill_time_s": 55.83206390263513,
+      "decode_tokens": 504,
+      "decode_time_s": 68.08164201164618,
+      "steps": [
+        {
+          "is_prefill": true,
+          "tokens": 534,
+          "time_s": 55.83206390263513
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 16.17840823624283
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.846064742654562
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8437379999086261
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8357975520193577
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8519483590498567
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8364308341406286
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8436217890121043
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8363278689794242
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.844496900215745
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8367535499855876
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8393480237573385
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8335288711823523
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8427444281987846
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8364742249250412
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8386063850484788
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8362269680947065
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8350336351431906
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8357851756736636
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8357509141787887
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.835528427734971
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8333653821609914
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8339265990070999
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8355191699229181
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8390976679511368
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8334876708686352
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8370595588348806
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.844171361066401
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8350700857117772
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8359547760337591
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8338502179831266
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.834694851655513
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8439421886578202
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8325722990557551
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8353366837836802
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8355471710674465
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8363527129404247
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8346040928736329
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8343125460669398
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8357134307734668
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8335268790833652
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8338704621419311
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8334472547285259
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8340005027130246
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8349652532488108
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8331375429406762
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8337681558914483
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8329194062389433
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8398275733925402
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8334740120917559
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8343323082663119
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8342042290605605
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8398079336620867
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8339007580652833
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8374123391695321
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8345570643432438
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8365485700778663
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8371529555879533
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8387465621344745
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8356001488864422
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8406615280546248
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8400736670009792
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8461079262197018
+        },
+        {
+          "is_prefill": false,
+          "tokens": 8,
+          "time_s": 0.8424056260846555
+        }
+      ],
+      "e2e_total_time_s": 123.9547361000441,
+      "prefill_throughput_tok_s": 9.564396561288442,
+      "decode_throughput_tok_s": 7.402876680233193
+    },
+    "total_generated_tokens": 512,
+    "rollout_txt_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_contiguous_tp1_ep8_eager1.txt"
+  },
+  "placement_generation": [
+    {
+      "name": "generate_fixed_random_shuffle",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.generate_moe_placement",
+        "--profile",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+        "--policy",
+        "fixed_random_shuffle",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+        "--seed",
+        "1234"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/generate_fixed_random_shuffle.log",
+      "timeout_s": 300,
+      "output_prefix": null,
+      "impl": null,
+      "placement": "fixed_random_shuffle",
+      "world_size": null,
+      "tp_size": null,
+      "gpu_group": null,
+      "port_retries": 0,
+      "env": {},
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.generate_moe_placement --profile /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json --policy fixed_random_shuffle --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --seed 1234",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 0.16582751274108887,
+      "port_retries_used": 0,
+      "profile_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+      "placement_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_fixed_random_shuffle_20260516_210050.json",
+      "estimated_metrics": {
+        "estimated_rank_compute_load": [
+          330518,
+          435575,
+          338706,
+          396920,
+          394877,
+          408960,
+          413157,
+          380935
+        ],
+        "estimated_local_traffic": 387783,
+        "estimated_cross_traffic": 2711865,
+        "estimated_cross_traffic_ratio": 0.8748945041501487,
+        "estimated_expert_cv": 0.2995808199300115,
+        "estimated_gpu_cv": 0.08773321377074325,
+        "per_src_rank_outgoing_replicas": [
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456
+        ],
+        "per_dst_rank_incoming_replicas": [
+          330518,
+          435575,
+          338706,
+          396920,
+          394877,
+          408960,
+          413157,
+          380935
+        ],
+        "expert_load": [
+          30481,
+          19217,
+          32038,
+          24981,
+          34946,
+          32513,
+          16670,
+          36076,
+          26979,
+          32238,
+          19502,
+          19225,
+          25694,
+          21326,
+          18855,
+          15167,
+          46214,
+          20523,
+          40318,
+          21905,
+          22947,
+          33651,
+          38084,
+          14447,
+          25297,
+          19638,
+          32440,
+          32641,
+          19199,
+          18795,
+          31208,
+          17787,
+          24593,
+          20356,
+          16795,
+          16865,
+          27153,
+          27035,
+          31909,
+          13862,
+          14628,
+          26531,
+          15927,
+          12200,
+          35337,
+          34289,
+          31465,
+          25764,
+          24674,
+          31637,
+          18935,
+          16801,
+          37134,
+          31829,
+          15151,
+          33052,
+          23834,
+          27219,
+          28821,
+          37668,
+          14567,
+          25181,
+          29871,
+          14621,
+          28683,
+          31320,
+          19410,
+          14437,
+          25466,
+          26249,
+          21344,
+          36353,
+          16496,
+          27336,
+          15702,
+          22887,
+          16799,
+          22241,
+          32385,
+          24469,
+          24090,
+          29739,
+          39234,
+          17701,
+          20039,
+          32488,
+          26352,
+          31742,
+          17070,
+          27169,
+          20915,
+          12144,
+          20256,
+          12710,
+          25955,
+          22877,
+          16061,
+          17622,
+          22514,
+          39462,
+          20151,
+          30294,
+          17213,
+          25515,
+          23311,
+          26789,
+          11441,
+          31109,
+          10092,
+          24595,
+          22133,
+          25116,
+          20066,
+          27664,
+          19411,
+          32906,
+          21644,
+          21324,
+          18657,
+          17692,
+          16359,
+          16822,
+          26585,
+          21145,
+          19509,
+          24014,
+          20367,
+          23301
+        ]
+      }
+    },
+    {
+      "name": "generate_load_balanced_greedy_with_locality_tiebreak",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.generate_moe_placement",
+        "--profile",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+        "--policy",
+        "load_balanced_greedy_with_locality_tiebreak",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/generate_load_balanced_greedy_with_locality_tiebreak.log",
+      "timeout_s": 300,
+      "output_prefix": null,
+      "impl": null,
+      "placement": "load_balanced_greedy_with_locality_tiebreak",
+      "world_size": null,
+      "tp_size": null,
+      "gpu_group": null,
+      "port_retries": 0,
+      "env": {},
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.generate_moe_placement --profile /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json --policy load_balanced_greedy_with_locality_tiebreak --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 0.11530947685241699,
+      "port_retries_used": 0,
+      "profile_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+      "placement_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_210050.json",
+      "estimated_metrics": {
+        "estimated_rank_compute_load": [
+          386597,
+          388510,
+          388625,
+          387369,
+          389069,
+          385338,
+          387279,
+          386861
+        ],
+        "estimated_local_traffic": 388731,
+        "estimated_cross_traffic": 2710917,
+        "estimated_cross_traffic_ratio": 0.8745886629707631,
+        "estimated_expert_cv": 0.2995808199300115,
+        "estimated_gpu_cv": 0.0029843021045070643,
+        "per_src_rank_outgoing_replicas": [
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456
+        ],
+        "per_dst_rank_incoming_replicas": [
+          386597,
+          388510,
+          388625,
+          387369,
+          389069,
+          385338,
+          387279,
+          386861
+        ],
+        "expert_load": [
+          30481,
+          19217,
+          32038,
+          24981,
+          34946,
+          32513,
+          16670,
+          36076,
+          26979,
+          32238,
+          19502,
+          19225,
+          25694,
+          21326,
+          18855,
+          15167,
+          46214,
+          20523,
+          40318,
+          21905,
+          22947,
+          33651,
+          38084,
+          14447,
+          25297,
+          19638,
+          32440,
+          32641,
+          19199,
+          18795,
+          31208,
+          17787,
+          24593,
+          20356,
+          16795,
+          16865,
+          27153,
+          27035,
+          31909,
+          13862,
+          14628,
+          26531,
+          15927,
+          12200,
+          35337,
+          34289,
+          31465,
+          25764,
+          24674,
+          31637,
+          18935,
+          16801,
+          37134,
+          31829,
+          15151,
+          33052,
+          23834,
+          27219,
+          28821,
+          37668,
+          14567,
+          25181,
+          29871,
+          14621,
+          28683,
+          31320,
+          19410,
+          14437,
+          25466,
+          26249,
+          21344,
+          36353,
+          16496,
+          27336,
+          15702,
+          22887,
+          16799,
+          22241,
+          32385,
+          24469,
+          24090,
+          29739,
+          39234,
+          17701,
+          20039,
+          32488,
+          26352,
+          31742,
+          17070,
+          27169,
+          20915,
+          12144,
+          20256,
+          12710,
+          25955,
+          22877,
+          16061,
+          17622,
+          22514,
+          39462,
+          20151,
+          30294,
+          17213,
+          25515,
+          23311,
+          26789,
+          11441,
+          31109,
+          10092,
+          24595,
+          22133,
+          25116,
+          20066,
+          27664,
+          19411,
+          32906,
+          21644,
+          21324,
+          18657,
+          17692,
+          16359,
+          16822,
+          26585,
+          21145,
+          19509,
+          24014,
+          20367,
+          23301
+        ]
+      }
+    },
+    {
+      "name": "generate_communication_aware_greedy",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.generate_moe_placement",
+        "--profile",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+        "--policy",
+        "communication_aware_greedy",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/generate_communication_aware_greedy.log",
+      "timeout_s": 300,
+      "output_prefix": null,
+      "impl": null,
+      "placement": "communication_aware_greedy",
+      "world_size": null,
+      "tp_size": null,
+      "gpu_group": null,
+      "port_retries": 0,
+      "env": {},
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.generate_moe_placement --profile /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json --policy communication_aware_greedy --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 0.11526274681091309,
+      "port_retries_used": 0,
+      "profile_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_routing_profile_20260516_205757_ws8_profile.json",
+      "placement_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_communication_aware_greedy_20260516_210050.json",
+      "estimated_metrics": {
+        "estimated_rank_compute_load": [
+          338326,
+          390372,
+          381280,
+          413101,
+          447596,
+          365536,
+          359737,
+          403700
+        ],
+        "estimated_local_traffic": 393873,
+        "estimated_cross_traffic": 2705775,
+        "estimated_cross_traffic_ratio": 0.8729297649281467,
+        "estimated_expert_cv": 0.2995808199300115,
+        "estimated_gpu_cv": 0.08286974985287228,
+        "per_src_rank_outgoing_replicas": [
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456,
+          387456
+        ],
+        "per_dst_rank_incoming_replicas": [
+          338326,
+          390372,
+          381280,
+          413101,
+          447596,
+          365536,
+          359737,
+          403700
+        ],
+        "expert_load": [
+          30481,
+          19217,
+          32038,
+          24981,
+          34946,
+          32513,
+          16670,
+          36076,
+          26979,
+          32238,
+          19502,
+          19225,
+          25694,
+          21326,
+          18855,
+          15167,
+          46214,
+          20523,
+          40318,
+          21905,
+          22947,
+          33651,
+          38084,
+          14447,
+          25297,
+          19638,
+          32440,
+          32641,
+          19199,
+          18795,
+          31208,
+          17787,
+          24593,
+          20356,
+          16795,
+          16865,
+          27153,
+          27035,
+          31909,
+          13862,
+          14628,
+          26531,
+          15927,
+          12200,
+          35337,
+          34289,
+          31465,
+          25764,
+          24674,
+          31637,
+          18935,
+          16801,
+          37134,
+          31829,
+          15151,
+          33052,
+          23834,
+          27219,
+          28821,
+          37668,
+          14567,
+          25181,
+          29871,
+          14621,
+          28683,
+          31320,
+          19410,
+          14437,
+          25466,
+          26249,
+          21344,
+          36353,
+          16496,
+          27336,
+          15702,
+          22887,
+          16799,
+          22241,
+          32385,
+          24469,
+          24090,
+          29739,
+          39234,
+          17701,
+          20039,
+          32488,
+          26352,
+          31742,
+          17070,
+          27169,
+          20915,
+          12144,
+          20256,
+          12710,
+          25955,
+          22877,
+          16061,
+          17622,
+          22514,
+          39462,
+          20151,
+          30294,
+          17213,
+          25515,
+          23311,
+          26789,
+          11441,
+          31109,
+          10092,
+          24595,
+          22133,
+          25116,
+          20066,
+          27664,
+          19411,
+          32906,
+          21644,
+          21324,
+          18657,
+          17692,
+          16359,
+          16822,
+          26585,
+          21145,
+          19509,
+          24014,
+          20367,
+          23301
+        ]
+      }
+    }
+  ],
+  "eval_results": [
+    {
+      "name": "ep_ll_triton_contiguous_ws8_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "8",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "42101",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "contiguous",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "8",
+        "--max-tokens",
+        "64",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "512",
+        "--max-num-seqs",
+        "8",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+        "--moe-ll-m-max",
+        "64"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/ep_ll_triton_contiguous_ws8_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_contiguous_tp1_ep8_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "contiguous",
+      "world_size": 8,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3,4,5,6,7",
+      "port_retries": 5,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "20260516_205757_ws8_ep_ll_triton_contiguous",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 8 --tp-size 1 --master-port 42101 --moe-impl ep_ll_triton --moe-expert-placement contiguous --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 8 --max-tokens 64 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --moe-ll-m-max 64",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 109.33008003234863,
+      "port_retries_used": 0,
+      "result_json_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_contiguous_tp1_ep8_eager1.json",
+      "metrics": {
+        "prefill_tokens": 534,
+        "prefill_time_s": 11.813537993934005,
+        "decode_tokens": 504,
+        "decode_time_s": 54.637450996320695,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 534,
+            "time_s": 11.813537993934005
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 3.6229345719330013
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8354496802203357
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.830290631391108
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8238194300793111
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8324217186309397
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8176203425973654
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.833052319008857
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8259625378996134
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8309153490699828
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.824630533810705
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8239446091465652
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8194714891724288
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8154938360676169
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.819685644004494
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8165503037162125
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8187574478797615
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8197859157808125
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8222680240869522
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8228598753921688
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8227617060765624
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8227489902637899
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8206428978592157
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8209409913979471
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8220711858011782
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8205721499398351
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8215983789414167
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8295169938355684
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8234095093794167
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8155101481825113
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8212001887150109
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8188613732345402
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8294769721105695
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8235049578361213
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8229139731265604
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.817193959839642
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8209940008819103
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8225012342445552
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8205504631623626
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8167270510457456
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8278619959019125
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8239001431502402
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8181860973127186
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8229708089493215
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8213245449587703
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8220446119084954
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8209184701554477
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8204319686628878
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.82636050414294
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8204190880060196
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8219524170272052
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8218366680666804
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8243304090574384
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8218846498057246
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8259016619995236
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8225909690372646
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8250244678929448
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8224604628048837
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.820519580040127
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8212530929595232
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8277820060029626
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8242366397753358
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8281556931324303
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8154926598072052
+          }
+        ],
+        "e2e_total_time_s": 66.49459611158818,
+        "prefill_throughput_tok_s": 45.20237716035597,
+        "decode_throughput_tok_s": 9.224442041301296
+      },
+      "total_generated_tokens": 512,
+      "rollout_txt_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_contiguous_tp1_ep8_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_round_robin_ws8_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "8",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "42111",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "round_robin",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "8",
+        "--max-tokens",
+        "64",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "512",
+        "--max-num-seqs",
+        "8",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+        "--moe-ll-m-max",
+        "64"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/ep_ll_triton_round_robin_ws8_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_round_robin_tp1_ep8_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "round_robin",
+      "world_size": 8,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3,4,5,6,7",
+      "port_retries": 5,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "20260516_205757_ws8_ep_ll_triton_round_robin",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 8 --tp-size 1 --master-port 42111 --moe-impl ep_ll_triton --moe-expert-placement round_robin --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 8 --max-tokens 64 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --moe-ll-m-max 64",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 111.3032374382019,
+      "port_retries_used": 0,
+      "result_json_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_round_robin_tp1_ep8_eager1.json",
+      "metrics": {
+        "prefill_tokens": 534,
+        "prefill_time_s": 11.846682981122285,
+        "decode_tokens": 504,
+        "decode_time_s": 55.78592598484829,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 534,
+            "time_s": 11.846682981122285
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 3.9198384191840887
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8480817247182131
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8544791443273425
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8447117758914828
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8549389131367207
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8428964749909937
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8528688857331872
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8362496439367533
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8451415025629103
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8383843759074807
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8409718163311481
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8376989960670471
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8360843979753554
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8374962508678436
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8334437282755971
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8337364108301699
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.830960642080754
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8350765160284936
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8342002183198929
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8356186370365322
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8372127516195178
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8364826939068735
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8344192449003458
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8335725851356983
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8326485119760036
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8363765198737383
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8340105498209596
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8330854820087552
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8332159109413624
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8347347979433835
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8355690413154662
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8415132057853043
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8377370880916715
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8340215412899852
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8360161483287811
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8340781279839575
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8336961711756885
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8359789508394897
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8351066997274756
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8334030639380217
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8338864496909082
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8443117728456855
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8362923162057996
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8353455169126391
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8339386051520705
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8333840686827898
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8339964509941638
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8333988701924682
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8318411032669246
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8309088749811053
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8317827628925443
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8341759708710015
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8339348519220948
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8374077081680298
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8331848671659827
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8326266095973551
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8328662510029972
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8314470439217985
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8338993242941797
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8311086306348443
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8343751998618245
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8336905129253864
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8423646618612111
+          }
+        ],
+        "e2e_total_time_s": 67.67511611804366,
+        "prefill_throughput_tok_s": 45.07590866160006,
+        "decode_throughput_tok_s": 9.034536777912205
+      },
+      "total_generated_tokens": 512,
+      "rollout_txt_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_round_robin_tp1_ep8_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_fixed_random_shuffle_ws8_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "8",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "42121",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "fixed_random_shuffle",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "8",
+        "--max-tokens",
+        "64",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "512",
+        "--max-num-seqs",
+        "8",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+        "--moe-ll-m-max",
+        "64",
+        "--moe-expert-placement-path",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_fixed_random_shuffle_20260516_210050.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/ep_ll_triton_fixed_random_shuffle_ws8_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep8_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "fixed_random_shuffle",
+      "world_size": 8,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3,4,5,6,7",
+      "port_retries": 5,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "20260516_205757_ws8_ep_ll_triton_fixed_random_shuffle",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 8 --tp-size 1 --master-port 42121 --moe-impl ep_ll_triton --moe-expert-placement fixed_random_shuffle --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 8 --max-tokens 64 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --moe-ll-m-max 64 --moe-expert-placement-path /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_fixed_random_shuffle_20260516_210050.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 102.41047763824463,
+      "port_retries_used": 0,
+      "result_json_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep8_eager1.json",
+      "metrics": {
+        "prefill_tokens": 534,
+        "prefill_time_s": 8.048724111169577,
+        "decode_tokens": 504,
+        "decode_time_s": 54.35433873813599,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 534,
+            "time_s": 8.048724111169577
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 3.7604329269379377
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8293593269772828
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8414709228090942
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8313680519349873
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8333699321374297
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8245172621682286
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8307714560069144
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8198251589201391
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8315553260035813
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8217349229380488
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8203343460336328
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8142245737835765
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8158701369538903
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8185126879252493
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.817022598348558
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8241884540766478
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.827685602940619
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.819914867170155
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8127818489447236
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.813731649890542
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8124620602466166
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8058459311723709
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8099558218382299
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8082672758027911
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8124608010984957
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8176223170012236
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8179876510985196
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.815037339925766
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8116629496216774
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8128590257838368
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8078677011653781
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8153009810484946
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8126183189451694
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.814980736002326
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8148737507872283
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8133406490087509
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8127575688995421
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8122186767868698
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8200361630879343
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8093990101478994
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8116014949046075
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8192863860167563
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8118470879271626
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8158785691484809
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8163954769261181
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8009643140248954
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8138736770488322
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8089630613103509
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8123975051566958
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8052123440429568
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8110802099108696
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8131672041490674
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8131320280954242
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8181391661055386
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8139552287757397
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8063512449152768
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8132388913072646
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8126552221365273
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8127925638109446
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8148122825659811
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8120497800409794
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8092012177221477
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8211169997230172
+          }
+        ],
+        "e2e_total_time_s": 62.45891910092905,
+        "prefill_throughput_tok_s": 66.34591925681043,
+        "decode_throughput_tok_s": 9.272488851867577
+      },
+      "total_generated_tokens": 512,
+      "rollout_txt_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep8_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_ws8_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "8",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "42131",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "load_balanced_greedy_with_locality_tiebreak",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "8",
+        "--max-tokens",
+        "64",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "512",
+        "--max-num-seqs",
+        "8",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+        "--moe-ll-m-max",
+        "64",
+        "--moe-expert-placement-path",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_210050.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_ws8_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep8_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "load_balanced_greedy_with_locality_tiebreak",
+      "world_size": 8,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3,4,5,6,7",
+      "port_retries": 5,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "20260516_205757_ws8_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 8 --tp-size 1 --master-port 42131 --moe-impl ep_ll_triton --moe-expert-placement load_balanced_greedy_with_locality_tiebreak --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 8 --max-tokens 64 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --moe-ll-m-max 64 --moe-expert-placement-path /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_210050.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 101.71311974525452,
+      "port_retries_used": 0,
+      "result_json_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep8_eager1.json",
+      "metrics": {
+        "prefill_tokens": 534,
+        "prefill_time_s": 9.22981197712943,
+        "decode_tokens": 504,
+        "decode_time_s": 54.425654178950936,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 534,
+            "time_s": 9.22981197712943
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 3.712870999239385
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8272507041692734
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8317906288430095
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8223163932561874
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8278829320333898
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8243069630116224
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8317029788158834
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8243190059438348
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.824506837874651
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.828268120996654
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8259246493689716
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8241489161737263
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8151654182001948
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8181202048435807
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8172359522432089
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8215002710931003
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8184401863254607
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8171084891073406
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8082206370308995
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8150195833295584
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8108211550861597
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8182074530050159
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.814744136761874
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8126097708009183
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8173176948912442
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8164670169353485
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8135721362195909
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8085084068588912
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8158756201155484
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8159542139619589
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8160264641046524
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8264805558137596
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8144397917203605
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8169483658857644
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8151135141961277
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.817975455429405
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8171783168800175
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8164309179410338
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8064872799441218
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8066281569190323
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8169434638693929
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8214635453186929
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8166058571077883
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8167077382095158
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8182834037579596
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8173502637073398
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8074080692604184
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8119312073104084
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8068538261577487
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8178674313239753
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8151325141079724
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8218233967199922
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.815671213902533
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8111917111091316
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8163212924264371
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8187411720864475
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8077205996960402
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8214683281257749
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8169613401405513
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8252431368455291
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8211364429444075
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8245975421741605
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8243443872779608
+          }
+        ],
+        "e2e_total_time_s": 63.70041399821639,
+        "prefill_throughput_tok_s": 57.85599981052699,
+        "decode_throughput_tok_s": 9.26033885312345
+      },
+      "total_generated_tokens": 512,
+      "rollout_txt_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep8_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_communication_aware_greedy_ws8_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "8",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "42141",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "communication_aware_greedy",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "8",
+        "--max-tokens",
+        "64",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "512",
+        "--max-num-seqs",
+        "8",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--output-dir",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8",
+        "--moe-ll-m-max",
+        "64",
+        "--moe-expert-placement-path",
+        "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_communication_aware_greedy_20260516_210050.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/logs/ep_ll_triton_communication_aware_greedy_ws8_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_communication_aware_greedy_tp1_ep8_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "communication_aware_greedy",
+      "world_size": 8,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3,4,5,6,7",
+      "port_retries": 5,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "20260516_205757_ws8_ep_ll_triton_communication_aware_greedy",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 8 --tp-size 1 --master-port 42141 --moe-impl ep_ll_triton --moe-expert-placement communication_aware_greedy --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 8 --max-tokens 64 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --output-dir /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8 --moe-ll-m-max 64 --moe-expert-placement-path /home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/moe_placement_communication_aware_greedy_20260516_210050.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 103.58844494819641,
+      "port_retries_used": 0,
+      "result_json_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_communication_aware_greedy_tp1_ep8_eager1.json",
+      "metrics": {
+        "prefill_tokens": 534,
+        "prefill_time_s": 8.875975450035185,
+        "decode_tokens": 465,
+        "decode_time_s": 55.59935874585062,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 534,
+            "time_s": 8.875975450035185
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 3.771765569690615
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8469564011320472
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8459026962518692
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8426707773469388
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8504171497188509
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8449496999382973
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8510464527644217
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8420526017434895
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.838507420849055
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8460800368338823
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8410056093707681
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8378343712538481
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8428904241882265
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8336073909886181
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8338577677495778
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8302820818498731
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8331161579117179
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8320038989186287
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8324376987293363
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8341025970876217
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8335105017758906
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8341991971246898
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8314736359752715
+          },
+          {
+            "is_prefill": false,
+            "tokens": 8,
+            "time_s": 0.8319901460781693
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8298274809494615
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8328116009943187
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8318902137689292
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8317257212474942
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8363970457576215
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8315906771458685
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8277610260993242
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8319988949224353
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8424664898775518
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8432521428912878
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8365349052473903
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8273504287935793
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.830521450843662
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8318909076042473
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8327601421624422
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8398974887095392
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8404963067732751
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.833650222979486
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8315559341572225
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8371206470765173
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8250482850708067
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8346834979020059
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8373426380567253
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8455190532840788
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8279469627887011
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8381379321217537
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8359208921901882
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8312508868984878
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8390314769931138
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8372183060273528
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8365252278745174
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8305159248411655
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8347462918609381
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8309073569253087
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.842441360000521
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.828655406832695
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8326757457107306
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8360549211502075
+          },
+          {
+            "is_prefill": false,
+            "tokens": 7,
+            "time_s": 0.8305765660479665
+          }
+        ],
+        "e2e_total_time_s": 64.52716444479302,
+        "prefill_throughput_tok_s": 60.1624016431775,
+        "decode_throughput_tok_s": 8.363405810587752
+      },
+      "total_generated_tokens": 473,
+      "rollout_txt_path": "/home/lzy/Artifact-Infer/eval_results/ep_ll_seq8_t64_b512_m64_20260516_20260516_205757/ws8/aime24_ep_ll_triton_communication_aware_greedy_tp1_ep8_eager1.txt"
+    }
+  ]
+}

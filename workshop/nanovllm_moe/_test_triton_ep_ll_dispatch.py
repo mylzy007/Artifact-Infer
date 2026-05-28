@@ -39,7 +39,16 @@ def _make_inputs(T: int, H: int, E_global: int, K: int, *, device, dtype, seed: 
     return hidden, logits
 
 
-def _run_dispatch(dispatch_kernel: str, hidden, logits, num_experts, top_k, M_max):
+def _run_dispatch(
+    dispatch_kernel: str,
+    hidden,
+    logits,
+    num_experts,
+    top_k,
+    M_max,
+    *,
+    overflow_policy: str = "drop",
+):
     """Run a fresh DispatchEPLL with the given kernel choice; return key buffers."""
     from workshop.nanovllm_moe.artifacts.modeling.layers.moe.dispatch_ep_ll import (
         DispatchEPLL,
@@ -51,6 +60,7 @@ def _run_dispatch(dispatch_kernel: str, hidden, logits, num_experts, top_k, M_ma
         m_max=M_max,
         norm_topk_prob=True,
         dispatch_kernel=dispatch_kernel,
+        overflow_policy=overflow_policy,
     ).to(device=hidden.device)
 
     meta = disp(hidden, logits)
@@ -199,6 +209,46 @@ def test_end_to_end_parity():
     print("  PASS")
 
 
+def test_overflow_policy():
+    """Both dispatch implementations support LL drop and eager debug error."""
+    print()
+    print("=" * 70)
+    print("Test 3: EP-LL dispatch overflow policy")
+    print("=" * 70)
+
+    device = "cuda:0"
+    dtype = torch.bfloat16
+    T = 4
+    H = 128
+    E_global = 4
+    K = 2
+    M_max = 1
+    hidden = torch.randn(T, H, device=device, dtype=dtype)
+    logits = torch.zeros(T, E_global, device=device, dtype=torch.float32)
+    # Force every token replica into the same first bucket.
+    logits[:, 0] = 2.0
+    logits[:, 1] = 1.0
+
+    for impl in ["torch", "triton"]:
+        drop_state = _run_dispatch(
+            impl, hidden, logits, E_global, K, M_max, overflow_policy="drop",
+        )
+        assert int(drop_state["local_counts"].max().item()) > M_max
+        valid_slots = int((drop_state["original_indices"][0, 0, :, 0] >= 0).sum().item())
+        assert valid_slots == M_max
+        print(f"  PASS  impl={impl}: drop policy kept {valid_slots} slot(s)")
+
+        try:
+            _run_dispatch(
+                impl, hidden, logits, E_global, K, M_max, overflow_policy="error",
+            )
+        except RuntimeError as exc:
+            assert "DispatchEPLL overflow" in str(exc)
+            print(f"  PASS  impl={impl}: error policy reported overflow")
+        else:
+            raise AssertionError(f"{impl} dispatch did not report overflow in error policy")
+
+
 def main():
     if not torch.cuda.is_available():
         print("CUDA not available, skipping.")
@@ -207,6 +257,7 @@ def main():
 
     test_dispatch_parity()
     test_end_to_end_parity()
+    test_overflow_policy()
 
     print()
     print("All parity tests PASSED.")

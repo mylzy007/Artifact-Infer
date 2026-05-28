@@ -19,6 +19,8 @@ Two launches make the full FusedMoE: GEMM1 (gate_up) → silu_and_mul → GEMM2 
 
 from __future__ import annotations
 
+import os
+
 import torch
 import triton
 import triton.language as tl
@@ -30,6 +32,11 @@ _FIXED_BLOCK_SIZE_K = 32
 _FIXED_GROUP_SIZE_M = 8
 _FIXED_NUM_WARPS = 4
 _FIXED_NUM_STAGES = 3
+
+
+def _debug_sync(stage: str) -> None:
+    if os.environ.get("MOE_EPHT_DEBUG_SYNC", "0") == "1":
+        torch.cuda.synchronize()
 
 
 @triton.jit
@@ -236,6 +243,7 @@ def triton_fused_moe(
         mul_routed_weight=False,
         c_sorted=False,
     )
+    _debug_sync("gemm1")
 
     # silu_and_mul: cache2[i] = silu(cache1[i, :N]) * cache1[i, N:]
     n_rows = cache1.size(0)
@@ -243,6 +251,7 @@ def triton_fused_moe(
         cache1, cache2,
         n_rows=n_rows, N=N, BLOCK=triton.next_power_of_2(N),
     )
+    _debug_sync("silu")
 
     # GEMM2: cache3[offs_token] = cache2[offs_token] @ w2[expert].T * topk_weight
     # `a` is now cache2, also indexed by offs_token — set top_k=1 so the
@@ -257,5 +266,6 @@ def triton_fused_moe(
         mul_routed_weight=True,
         c_sorted=False,
     )
+    _debug_sync("gemm2")
 
     return cache3.view(T, K_top, H)

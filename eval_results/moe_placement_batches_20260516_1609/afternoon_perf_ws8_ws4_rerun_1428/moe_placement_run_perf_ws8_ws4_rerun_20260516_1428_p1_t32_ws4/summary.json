@@ -1,0 +1,3111 @@
+{
+  "run_id": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4",
+  "args": {
+    "python": "/home/lzy/miniconda3/envs/vllm/bin/python",
+    "cuda_home": "/usr/local/cuda-12.8",
+    "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+    "dataset_path": "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+    "gpu_ids": "0,1,2,3,4,5,6,7",
+    "gpus_per_job": 4,
+    "parallel_jobs": 2,
+    "world_size": 4,
+    "world_sizes": null,
+    "tp_size": 1,
+    "impls": "ep_ll_triton,ep_ht",
+    "placements": "contiguous,round_robin,fixed_random_shuffle,load_balanced_greedy_with_locality_tiebreak,communication_aware_greedy",
+    "seed": 1234,
+    "num_layers": -1,
+    "num_problems": 1,
+    "max_tokens": 32,
+    "scale_steps": null,
+    "max_model_len": 512,
+    "max_num_batched_tokens": 1024,
+    "max_num_seqs": 4,
+    "gpu_memory_utilization": 0.85,
+    "enforce_eager": 1,
+    "moe_ll_overflow_policy": "drop",
+    "moe_ll_m_max": -1,
+    "base_master_port": 41100,
+    "port_retries": 3,
+    "timeout_s": 5400,
+    "run_id": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4",
+    "dry_run": false,
+    "skip_profile": null
+  },
+  "gpu_groups": [
+    "0,1,2,3",
+    "4,5,6,7"
+  ],
+  "profile": {
+    "name": "ep_ll_triton_contiguous_ws4_tp1",
+    "cmd": [
+      "/home/lzy/miniconda3/envs/vllm/bin/python",
+      "-m",
+      "eval.test_bazaar_moe",
+      "--model-path",
+      "/home/lzy/models/Qwen3-30B-A3B",
+      "--dataset-path",
+      "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+      "--world-size",
+      "4",
+      "--tp-size",
+      "1",
+      "--master-port",
+      "41100",
+      "--moe-impl",
+      "ep_ll_triton",
+      "--moe-expert-placement",
+      "contiguous",
+      "--moe-expert-placement-seed",
+      "1234",
+      "--num-layers",
+      "-1",
+      "--num-problems",
+      "1",
+      "--max-tokens",
+      "32",
+      "--max-model-len",
+      "512",
+      "--max-num-batched-tokens",
+      "1024",
+      "--max-num-seqs",
+      "4",
+      "--gpu-memory-utilization",
+      "0.85",
+      "--enforce-eager",
+      "1",
+      "--moe-ll-overflow-policy",
+      "drop",
+      "--moe-profile-routing",
+      "1"
+    ],
+    "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ll_triton_contiguous_ws4_tp1.log",
+    "timeout_s": 5400,
+    "output_prefix": "aime24_ep_ll_triton_contiguous_tp1_ep4_eager1",
+    "impl": "ep_ll_triton",
+    "placement": "contiguous",
+    "world_size": 4,
+    "tp_size": 1,
+    "gpu_group": "0,1,2,3",
+    "port_retries": 3,
+    "env": {
+      "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+      "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile",
+      "PYTHONUNBUFFERED": "1",
+      "CUDA_HOME": "/usr/local/cuda-12.8",
+      "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+      "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+    },
+    "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41100 --moe-impl ep_ll_triton --moe-expert-placement contiguous --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 1",
+    "exit_code": 0,
+    "pass": true,
+    "timed_out": false,
+    "elapsed_s": 182.10036730766296,
+    "port_retries_used": 0,
+    "profile_path": "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+    "result_json_path": "eval_results/aime24_ep_ll_triton_contiguous_tp1_ep4_eager1.json",
+    "metrics": {
+      "prefill_tokens": 74,
+      "prefill_time_s": 49.33226427761838,
+      "decode_tokens": 31,
+      "decode_time_s": 97.03876565257087,
+      "steps": [
+        {
+          "is_prefill": true,
+          "tokens": 74,
+          "time_s": 49.33226427761838
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 16.753102348651737
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6801423826254904
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.683105579111725
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.681074919179082
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.681572109926492
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6809612438082695
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6729438975453377
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.673857362009585
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6782688689418137
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.67543563619256
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6788197229616344
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6748307212255895
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.675822841003537
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6710794451646507
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.673027154058218
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6849187910556793
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6787065439857543
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6747161159291863
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6772176777012646
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6670770472846925
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6784318280406296
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6733366269618273
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.678674367722124
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6713910889811814
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.675461959093809
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.673522900789976
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6721378471702337
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6776391277089715
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.671293113846332
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.679167617112398
+        },
+        {
+          "is_prefill": false,
+          "tokens": 1,
+          "time_s": 2.6710287667810917
+        }
+      ],
+      "e2e_total_time_s": 146.3844836531207,
+      "prefill_throughput_tok_s": 1.500032505776816,
+      "decode_throughput_tok_s": 0.31945995800265736
+    },
+    "total_generated_tokens": 32,
+    "rollout_txt_path": "eval_results/aime24_ep_ll_triton_contiguous_tp1_ep4_eager1.txt"
+  },
+  "placement_generation": [
+    {
+      "name": "generate_fixed_random_shuffle",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.generate_moe_placement",
+        "--profile",
+        "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+        "--policy",
+        "fixed_random_shuffle",
+        "--output-dir",
+        "eval_results",
+        "--seed",
+        "1234"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/generate_fixed_random_shuffle.log",
+      "timeout_s": 300,
+      "output_prefix": null,
+      "impl": null,
+      "placement": "fixed_random_shuffle",
+      "world_size": null,
+      "tp_size": null,
+      "gpu_group": null,
+      "port_retries": 0,
+      "env": {},
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.generate_moe_placement --profile eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json --policy fixed_random_shuffle --output-dir eval_results --seed 1234",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 0.21607542037963867,
+      "port_retries_used": 0,
+      "profile_path": "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+      "placement_path": "eval_results/moe_placement_fixed_random_shuffle_20260516_145156.json",
+      "estimated_metrics": {
+        "estimated_rank_compute_load": [
+          39352,
+          37736,
+          40184,
+          42472
+        ],
+        "estimated_local_traffic": 39908,
+        "estimated_cross_traffic": 119836,
+        "estimated_cross_traffic_ratio": 0.750175280448718,
+        "estimated_expert_cv": 0.3604047454394388,
+        "estimated_gpu_cv": 0.042777224858236845,
+        "per_src_rank_outgoing_replicas": [
+          39936,
+          39936,
+          39936,
+          39936
+        ],
+        "per_dst_rank_incoming_replicas": [
+          39352,
+          37736,
+          40184,
+          42472
+        ],
+        "expert_load": [
+          1179,
+          775,
+          1379,
+          1052,
+          2097,
+          1855,
+          741,
+          2053,
+          1130,
+          2031,
+          1551,
+          1159,
+          2214,
+          1302,
+          1080,
+          787,
+          2316,
+          995,
+          1926,
+          836,
+          1231,
+          1684,
+          2469,
+          1057,
+          1001,
+          752,
+          950,
+          1961,
+          1004,
+          881,
+          1843,
+          551,
+          1093,
+          505,
+          1115,
+          947,
+          1709,
+          1630,
+          1837,
+          464,
+          1172,
+          1070,
+          686,
+          668,
+          2355,
+          1604,
+          2138,
+          1003,
+          1056,
+          1133,
+          861,
+          1173,
+          1451,
+          1606,
+          983,
+          1802,
+          1059,
+          786,
+          1227,
+          1266,
+          1089,
+          1289,
+          1879,
+          847,
+          1060,
+          1383,
+          1305,
+          531,
+          1057,
+          1409,
+          1252,
+          1814,
+          627,
+          965,
+          1278,
+          1138,
+          939,
+          1111,
+          932,
+          1747,
+          698,
+          809,
+          1961,
+          1117,
+          854,
+          1693,
+          1908,
+          1885,
+          640,
+          1572,
+          1002,
+          685,
+          659,
+          576,
+          1380,
+          1581,
+          1227,
+          1515,
+          969,
+          2294,
+          1075,
+          1424,
+          994,
+          1223,
+          1419,
+          1447,
+          654,
+          1234,
+          417,
+          1019,
+          1100,
+          1435,
+          1097,
+          1611,
+          1018,
+          1723,
+          1595,
+          1140,
+          1030,
+          901,
+          1308,
+          1227,
+          836,
+          1274,
+          1557,
+          1260,
+          815,
+          993
+        ]
+      }
+    },
+    {
+      "name": "generate_load_balanced_greedy_with_locality_tiebreak",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.generate_moe_placement",
+        "--profile",
+        "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+        "--policy",
+        "load_balanced_greedy_with_locality_tiebreak",
+        "--output-dir",
+        "eval_results"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/generate_load_balanced_greedy_with_locality_tiebreak.log",
+      "timeout_s": 300,
+      "output_prefix": null,
+      "impl": null,
+      "placement": "load_balanced_greedy_with_locality_tiebreak",
+      "world_size": null,
+      "tp_size": null,
+      "gpu_group": null,
+      "port_retries": 0,
+      "env": {},
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.generate_moe_placement --profile eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json --policy load_balanced_greedy_with_locality_tiebreak --output-dir eval_results",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 0.21581578254699707,
+      "port_retries_used": 0,
+      "profile_path": "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+      "placement_path": "eval_results/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_145157.json",
+      "estimated_metrics": {
+        "estimated_rank_compute_load": [
+          39943,
+          39953,
+          39948,
+          39900
+        ],
+        "estimated_local_traffic": 39939,
+        "estimated_cross_traffic": 119805,
+        "estimated_cross_traffic_ratio": 0.7499812199519231,
+        "estimated_expert_cv": 0.3604047454394388,
+        "estimated_gpu_cv": 0.0005279238942885621,
+        "per_src_rank_outgoing_replicas": [
+          39936,
+          39936,
+          39936,
+          39936
+        ],
+        "per_dst_rank_incoming_replicas": [
+          39943,
+          39953,
+          39948,
+          39900
+        ],
+        "expert_load": [
+          1179,
+          775,
+          1379,
+          1052,
+          2097,
+          1855,
+          741,
+          2053,
+          1130,
+          2031,
+          1551,
+          1159,
+          2214,
+          1302,
+          1080,
+          787,
+          2316,
+          995,
+          1926,
+          836,
+          1231,
+          1684,
+          2469,
+          1057,
+          1001,
+          752,
+          950,
+          1961,
+          1004,
+          881,
+          1843,
+          551,
+          1093,
+          505,
+          1115,
+          947,
+          1709,
+          1630,
+          1837,
+          464,
+          1172,
+          1070,
+          686,
+          668,
+          2355,
+          1604,
+          2138,
+          1003,
+          1056,
+          1133,
+          861,
+          1173,
+          1451,
+          1606,
+          983,
+          1802,
+          1059,
+          786,
+          1227,
+          1266,
+          1089,
+          1289,
+          1879,
+          847,
+          1060,
+          1383,
+          1305,
+          531,
+          1057,
+          1409,
+          1252,
+          1814,
+          627,
+          965,
+          1278,
+          1138,
+          939,
+          1111,
+          932,
+          1747,
+          698,
+          809,
+          1961,
+          1117,
+          854,
+          1693,
+          1908,
+          1885,
+          640,
+          1572,
+          1002,
+          685,
+          659,
+          576,
+          1380,
+          1581,
+          1227,
+          1515,
+          969,
+          2294,
+          1075,
+          1424,
+          994,
+          1223,
+          1419,
+          1447,
+          654,
+          1234,
+          417,
+          1019,
+          1100,
+          1435,
+          1097,
+          1611,
+          1018,
+          1723,
+          1595,
+          1140,
+          1030,
+          901,
+          1308,
+          1227,
+          836,
+          1274,
+          1557,
+          1260,
+          815,
+          993
+        ]
+      }
+    },
+    {
+      "name": "generate_communication_aware_greedy",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.generate_moe_placement",
+        "--profile",
+        "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+        "--policy",
+        "communication_aware_greedy",
+        "--output-dir",
+        "eval_results"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/generate_communication_aware_greedy.log",
+      "timeout_s": 300,
+      "output_prefix": null,
+      "impl": null,
+      "placement": "communication_aware_greedy",
+      "world_size": null,
+      "tp_size": null,
+      "gpu_group": null,
+      "port_retries": 0,
+      "env": {},
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.generate_moe_placement --profile eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json --policy communication_aware_greedy --output-dir eval_results",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 0.2158818244934082,
+      "port_retries_used": 0,
+      "profile_path": "eval_results/moe_routing_profile_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_profile.json",
+      "placement_path": "eval_results/moe_placement_communication_aware_greedy_20260516_145157.json",
+      "estimated_metrics": {
+        "estimated_rank_compute_load": [
+          41680,
+          43857,
+          37865,
+          36342
+        ],
+        "estimated_local_traffic": 40276,
+        "estimated_cross_traffic": 119468,
+        "estimated_cross_traffic_ratio": 0.747871594551282,
+        "estimated_expert_cv": 0.3604047454394388,
+        "estimated_gpu_cv": 0.07472440767151632,
+        "per_src_rank_outgoing_replicas": [
+          39936,
+          39936,
+          39936,
+          39936
+        ],
+        "per_dst_rank_incoming_replicas": [
+          41680,
+          43857,
+          37865,
+          36342
+        ],
+        "expert_load": [
+          1179,
+          775,
+          1379,
+          1052,
+          2097,
+          1855,
+          741,
+          2053,
+          1130,
+          2031,
+          1551,
+          1159,
+          2214,
+          1302,
+          1080,
+          787,
+          2316,
+          995,
+          1926,
+          836,
+          1231,
+          1684,
+          2469,
+          1057,
+          1001,
+          752,
+          950,
+          1961,
+          1004,
+          881,
+          1843,
+          551,
+          1093,
+          505,
+          1115,
+          947,
+          1709,
+          1630,
+          1837,
+          464,
+          1172,
+          1070,
+          686,
+          668,
+          2355,
+          1604,
+          2138,
+          1003,
+          1056,
+          1133,
+          861,
+          1173,
+          1451,
+          1606,
+          983,
+          1802,
+          1059,
+          786,
+          1227,
+          1266,
+          1089,
+          1289,
+          1879,
+          847,
+          1060,
+          1383,
+          1305,
+          531,
+          1057,
+          1409,
+          1252,
+          1814,
+          627,
+          965,
+          1278,
+          1138,
+          939,
+          1111,
+          932,
+          1747,
+          698,
+          809,
+          1961,
+          1117,
+          854,
+          1693,
+          1908,
+          1885,
+          640,
+          1572,
+          1002,
+          685,
+          659,
+          576,
+          1380,
+          1581,
+          1227,
+          1515,
+          969,
+          2294,
+          1075,
+          1424,
+          994,
+          1223,
+          1419,
+          1447,
+          654,
+          1234,
+          417,
+          1019,
+          1100,
+          1435,
+          1097,
+          1611,
+          1018,
+          1723,
+          1595,
+          1140,
+          1030,
+          901,
+          1308,
+          1227,
+          836,
+          1274,
+          1557,
+          1260,
+          815,
+          993
+        ]
+      }
+    }
+  ],
+  "eval_results": [
+    {
+      "name": "ep_ll_triton_round_robin_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41111",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "round_robin",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ll_triton_round_robin_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_round_robin_tp1_ep4_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "round_robin",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "4,5,6,7",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ll_triton_round_robin",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41111 --moe-impl ep_ll_triton --moe-expert-placement round_robin --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 125.60320448875427,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ll_triton_round_robin_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 7.859806770924479,
+        "decode_tokens": 31,
+        "decode_time_s": 81.76260052155703,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 7.859806770924479
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 4.294860785361379
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5875392691232264
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5946041117422283
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5865937010385096
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.585010753944516
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.594003214035183
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.585904928855598
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5788299990817904
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.578880296088755
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.590679499786347
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5821586470119655
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5907341120764613
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5729582929052413
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5810463656671345
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5737381423823535
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5877856207080185
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.580063947942108
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.580310402903706
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.578326886985451
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5651225461624563
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5846902593038976
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5847521550022066
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5849106619134545
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5841953796334565
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5777510101906955
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.584235983900726
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.582285530399531
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5832454091869295
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.579682205338031
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.576140779070556
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5715596238151193
+          }
+        ],
+        "e2e_total_time_s": 89.63957712519914,
+        "prefill_throughput_tok_s": 9.414989726432681,
+        "decode_throughput_tok_s": 0.3791464532959263
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ll_triton_round_robin_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_contiguous_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41101",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "contiguous",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ll_triton_contiguous_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_contiguous_tp1_ep4_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "contiguous",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ll_triton_contiguous",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41101 --moe-impl ep_ll_triton --moe-expert-placement contiguous --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 132.47756171226501,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ll_triton_contiguous_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 7.756301027256995,
+        "decode_tokens": 31,
+        "decode_time_s": 86.1087051006034,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 7.756301027256995
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 4.120877378154546
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7391177001409233
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7345002363435924
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.735962724778801
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.734543915838003
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7277094619348645
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7347007333301008
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.727477852255106
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7275011660531163
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.732533608097583
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7343795150518417
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.733213639818132
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7332470607943833
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7277622227557003
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.730520686134696
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7309241252951324
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7338188253343105
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.733993823174387
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7371616028249264
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.728619542904198
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7350825262255967
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.743598642293364
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7296899519860744
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7331484500318766
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7312152376398444
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7334407209418714
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7347342241555452
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7303181807510555
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.735310464631766
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.727450385224074
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7361504957079887
+          }
+        ],
+        "e2e_total_time_s": 93.88206871692091,
+        "prefill_throughput_tok_s": 9.540630223085861,
+        "decode_throughput_tok_s": 0.36001005895724203
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ll_triton_contiguous_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41131",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "load_balanced_greedy_with_locality_tiebreak",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--moe-expert-placement-path",
+        "eval_results/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_145157.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep4_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "load_balanced_greedy_with_locality_tiebreak",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "4,5,6,7",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41131 --moe-impl ep_ll_triton --moe-expert-placement load_balanced_greedy_with_locality_tiebreak --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --moe-expert-placement-path eval_results/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_145157.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 123.78766012191772,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 7.280077517032623,
+        "decode_tokens": 31,
+        "decode_time_s": 81.33323684427887,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 7.280077517032623
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 4.114771896973252
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.579570538364351
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.578987102024257
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5851212171837687
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5839816513471305
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.578950315248221
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.571776183322072
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.568982866127044
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.575738070998341
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.570824454072863
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5709669128991663
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5671211630105972
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.575078174006194
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.577406377065927
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5738887330517173
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5702988668344915
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.573245232924819
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.574503881856799
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.573793068062514
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5707968967035413
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.577025800012052
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5763109670951962
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.570024707354605
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.57166346302256
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.560381135903299
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5744047220796347
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5693483632057905
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5675646257586777
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5767360110767186
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.573881594929844
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.5800918517634273
+          }
+        ],
+        "e2e_total_time_s": 88.63123400462791,
+        "prefill_throughput_tok_s": 10.1647269313916,
+        "decode_throughput_tok_s": 0.38114799315503445
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ll_triton_fixed_random_shuffle_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41121",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "fixed_random_shuffle",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--moe-expert-placement-path",
+        "eval_results/moe_placement_fixed_random_shuffle_20260516_145156.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ll_triton_fixed_random_shuffle_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep4_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "fixed_random_shuffle",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ll_triton_fixed_random_shuffle",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41121 --moe-impl ep_ll_triton --moe-expert-placement fixed_random_shuffle --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --moe-expert-placement-path eval_results/moe_placement_fixed_random_shuffle_20260516_145156.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 135.191472530365,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 7.602144198026508,
+        "decode_tokens": 31,
+        "decode_time_s": 86.38560621021315,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 7.602144198026508
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 4.364106085617095
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.732862452045083
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.727658370975405
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7341415830887854
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.730117365717888
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.73131990339607
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.736737738829106
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7358713089488447
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.736955981235951
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.731967044994235
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7368306880816817
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7375738038681448
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7300504758022726
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.734691916964948
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.737380785867572
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7324093179777265
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7409838251769543
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.73616277705878
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7293587340973318
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7298498060554266
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7325081238523126
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7463199850171804
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7302623144350946
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7341491049155593
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.733189048245549
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7352879540994763
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7322083520703018
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7369783339090645
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7369683436118066
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7289263512939215
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.731778332963586
+          }
+        ],
+        "e2e_total_time_s": 94.00369163928553,
+        "prefill_throughput_tok_s": 9.734095811969754,
+        "decode_throughput_tok_s": 0.35885607984927176
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ht_contiguous_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41151",
+        "--moe-impl",
+        "ep_ht",
+        "--moe-expert-placement",
+        "contiguous",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ht_contiguous_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ht_contiguous_tp1_ep4_eager1",
+      "impl": "ep_ht",
+      "placement": "contiguous",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "4,5,6,7",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ht_contiguous",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41151 --moe-impl ep_ht --moe-expert-placement contiguous --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 55.73717498779297,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ht_contiguous_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 5.585551238618791,
+        "decode_tokens": 31,
+        "decode_time_s": 8.474986494053155,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 5.585551238618791
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.0117336260154843
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2901519206352532
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2893785107880831
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2791586206294596
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.27625687792897224
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2678593900054693
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20211256528273225
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19776682974770665
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20245446870103478
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20842213183641434
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20210674218833447
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1996448771096766
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1990347453393042
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20262863487005234
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20337219163775444
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.208898707292974
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20563109777867794
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20611057663336396
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21761102927848697
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20175591157749295
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19949191436171532
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19718480110168457
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20255945483222604
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19985219603404403
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1988046416081488
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20028499234467745
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20484912674874067
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19761607190594077
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20224400283768773
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19674539007246494
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20326444692909718
+          }
+        ],
+        "e2e_total_time_s": 14.077200486790389,
+        "prefill_throughput_tok_s": 13.24846856445612,
+        "decode_throughput_tok_s": 3.6578229383318197
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ht_contiguous_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ht_round_robin_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41161",
+        "--moe-impl",
+        "ep_ht",
+        "--moe-expert-placement",
+        "round_robin",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ht_round_robin_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ht_round_robin_tp1_ep4_eager1",
+      "impl": "ep_ht",
+      "placement": "round_robin",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ht_round_robin",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41161 --moe-impl ep_ht --moe-expert-placement round_robin --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0",
+      "exit_code": 1,
+      "pass": false,
+      "timed_out": false,
+      "elapsed_s": 30.923600912094116,
+      "port_retries_used": 0,
+      "exception_summary": [
+        "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 1 has a total capacity of 23.52 GiB of which 49.19 MiB is free. Process 2413281 has 20.09 GiB memory in use. Including non-PyTorch memory, this process has 3.36 GiB memory in use. Of the allocated memory 2.44 GiB is allocated by PyTorch, and 8.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+        "[rank 3] EXCEPTION: OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 3 has a total capacity of 23.52 GiB of which 49.19 MiB is free. Process 2413283 has 20.09 GiB memory in use. Including non-PyTorch memory, this process has 3.36 GiB memory in use. Of the allocated memory 2.44 GiB is allocated by PyTorch, and 8.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+        "Traceback (most recent call last):",
+        "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 3 has a total capacity of 23.52 GiB of which 49.19 MiB is free. Process 2413283 has 20.09 GiB memory in use. Including non-PyTorch memory, this process has 3.36 GiB memory in use. Of the allocated memory 2.44 GiB is allocated by PyTorch, and 8.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+        "[rank 0] EXCEPTION: OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacity of 23.52 GiB of which 49.19 MiB is free. Process 2413280 has 20.09 GiB memory in use. Including non-PyTorch memory, this process has 3.36 GiB memory in use. Of the allocated memory 2.44 GiB is allocated by PyTorch, and 8.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+        "Traceback (most recent call last):",
+        "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacity of 23.52 GiB of which 49.19 MiB is free. Process 2413280 has 20.09 GiB memory in use. Including non-PyTorch memory, this process has 3.36 GiB memory in use. Of the allocated memory 2.44 GiB is allocated by PyTorch, and 8.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+        "[rank2]:[W516 14:57:38.107674700 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())",
+        "[rank0]:[W516 14:57:38.137856765 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())",
+        "[rank1]:[W516 14:57:38.163678708 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())",
+        "[rank3]:[W516 14:57:38.265158178 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())",
+        "Traceback (most recent call last):"
+      ],
+      "oom": true
+    },
+    {
+      "name": "ep_ll_triton_communication_aware_greedy_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41141",
+        "--moe-impl",
+        "ep_ll_triton",
+        "--moe-expert-placement",
+        "communication_aware_greedy",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--moe-expert-placement-path",
+        "eval_results/moe_placement_communication_aware_greedy_20260516_145157.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ll_triton_communication_aware_greedy_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ll_triton_communication_aware_greedy_tp1_ep4_eager1",
+      "impl": "ep_ll_triton",
+      "placement": "communication_aware_greedy",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ll_triton_communication_aware_greedy",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41141 --moe-impl ep_ll_triton --moe-expert-placement communication_aware_greedy --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --moe-expert-placement-path eval_results/moe_placement_communication_aware_greedy_20260516_145157.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 131.78618144989014,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ll_triton_communication_aware_greedy_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 7.604806695599109,
+        "decode_tokens": 31,
+        "decode_time_s": 89.5689186048694,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 7.604806695599109
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 4.280746683012694
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.853111340664327
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.841109395958483
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7516783382743597
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7397351847030222
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7870440050028265
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.812317008152604
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7346631549298763
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7277988479472697
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7078282749280334
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7189309331588447
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7155221947468817
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.726697592996061
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7506917961873114
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7661094809882343
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.794273679610342
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.8400880289264023
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.8307043509557843
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7274345848709345
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.725554139818996
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.719403963070363
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7149374410510063
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7217219159938395
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.730023812968284
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.7455543568357825
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.76371364435181
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.775373825803399
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 2.9882586211897433
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 3.5069985478185117
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 3.549171411897987
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 3.5217220480553806
+          }
+        ],
+        "e2e_total_time_s": 97.1904426170513,
+        "prefill_throughput_tok_s": 9.730687834948348,
+        "decode_throughput_tok_s": 0.34610220244765455
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ll_triton_communication_aware_greedy_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ht_fixed_random_shuffle_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41171",
+        "--moe-impl",
+        "ep_ht",
+        "--moe-expert-placement",
+        "fixed_random_shuffle",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--moe-expert-placement-path",
+        "eval_results/moe_placement_fixed_random_shuffle_20260516_145156.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ht_fixed_random_shuffle_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ht_fixed_random_shuffle_tp1_ep4_eager1",
+      "impl": "ep_ht",
+      "placement": "fixed_random_shuffle",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "4,5,6,7",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ht_fixed_random_shuffle",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41171 --moe-impl ep_ht --moe-expert-placement fixed_random_shuffle --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --moe-expert-placement-path eval_results/moe_placement_fixed_random_shuffle_20260516_145156.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 61.57248306274414,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ht_fixed_random_shuffle_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 4.994117702357471,
+        "decode_tokens": 31,
+        "decode_time_s": 14.774437802378088,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 4.994117702357471
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 3.078021134249866
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42682248586788774
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.44498956529423594
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4437031880952418
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4369937311857939
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4388947170227766
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4232434183359146
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4250295450910926
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.41987489024177194
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.424812154378742
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42070850590243936
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4310407009907067
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.43637554394081235
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4258796093054116
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42700659623369575
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42553533101454377
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42309198901057243
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4361413959413767
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4205922409892082
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42257531406357884
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4271681378595531
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42157973488792777
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42043850384652615
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.4228350971825421
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.42575113102793694
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.3053989950567484
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2219367641955614
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2244028439745307
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22195655712857842
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22460289299488068
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22703508706763387
+          }
+        ],
+        "e2e_total_time_s": 19.80919174430892,
+        "prefill_throughput_tok_s": 14.817432109192847,
+        "decode_throughput_tok_s": 2.0982185863620644
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ht_fixed_random_shuffle_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ht_load_balanced_greedy_with_locality_tiebreak_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41181",
+        "--moe-impl",
+        "ep_ht",
+        "--moe-expert-placement",
+        "load_balanced_greedy_with_locality_tiebreak",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--moe-expert-placement-path",
+        "eval_results/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_145157.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ht_load_balanced_greedy_with_locality_tiebreak_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ht_load_balanced_greedy_with_locality_tiebreak_tp1_ep4_eager1",
+      "impl": "ep_ht",
+      "placement": "load_balanced_greedy_with_locality_tiebreak",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ht_load_balanced_greedy_with_locality_tiebreak",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41181 --moe-impl ep_ht --moe-expert-placement load_balanced_greedy_with_locality_tiebreak --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --moe-expert-placement-path eval_results/moe_placement_load_balanced_greedy_with_locality_tiebreak_20260516_145157.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 56.48339772224426,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ht_load_balanced_greedy_with_locality_tiebreak_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 5.85662958631292,
+        "decode_tokens": 31,
+        "decode_time_s": 7.307064765132964,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 5.85662958631292
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 1.8416787208989263
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2302787797525525
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22380581498146057
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2161415251903236
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2149937730282545
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2135729850269854
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21746436785906553
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.19801072077825665
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1724521708674729
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17101927427574992
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1770232687704265
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17506804037839174
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17076596105471253
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17213757382705808
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1706780819222331
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1709698741324246
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17026233905926347
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1704227547161281
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.171820268034935
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1718715913593769
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17129555204883218
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17070927191525698
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.16944548161700368
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.16946521494537592
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.172836119774729
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1701061949133873
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17523791873827577
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17245428916066885
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17302067391574383
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1710951100103557
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.17096105217933655
+          }
+        ],
+        "e2e_total_time_s": 13.179035185836256,
+        "prefill_throughput_tok_s": 12.635253589016408,
+        "decode_throughput_tok_s": 4.242469582030029
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ht_load_balanced_greedy_with_locality_tiebreak_tp1_ep4_eager1.txt"
+    },
+    {
+      "name": "ep_ht_communication_aware_greedy_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "41191",
+        "--moe-impl",
+        "ep_ht",
+        "--moe-expert-placement",
+        "communication_aware_greedy",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0",
+        "--moe-expert-placement-path",
+        "eval_results/moe_placement_communication_aware_greedy_20260516_145157.json"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/logs/ep_ht_communication_aware_greedy_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ht_communication_aware_greedy_tp1_ep4_eager1",
+      "impl": "ep_ht",
+      "placement": "communication_aware_greedy",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "4,5,6,7",
+      "port_retries": 3,
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+        "MOE_PROFILE_RUN_ID": "perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4_ep_ht_communication_aware_greedy",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1428_p1_t32_ws4/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 41191 --moe-impl ep_ht --moe-expert-placement communication_aware_greedy --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0 --moe-expert-placement-path eval_results/moe_placement_communication_aware_greedy_20260516_145157.json",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 47.17768430709839,
+      "port_retries_used": 0,
+      "result_json_path": "eval_results/aime24_ep_ht_communication_aware_greedy_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 4.605958071071655,
+        "decode_tokens": 31,
+        "decode_time_s": 7.503731012810022,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 4.605958071071655
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 1.6521476730704308
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.24445529794320464
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22954759374260902
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21882852585986257
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22060697339475155
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21625012625008821
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2626114268787205
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21605734108015895
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21346317464485765
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21018137503415346
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21380893280729651
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21106956619769335
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21111200796440244
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20981596782803535
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21587966987863183
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20941862184554338
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20950249815359712
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.21167495101690292
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2099161660298705
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.20845533115789294
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.18164286902174354
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15592212695628405
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15203530294820666
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1564199742861092
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1505577489733696
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1522224652580917
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15178733365610242
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15047438722103834
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15064958296716213
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15675761783495545
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15045838290825486
+          }
+        ],
+        "e2e_total_time_s": 12.123938198201358,
+        "prefill_throughput_tok_s": 16.066147120349846,
+        "decode_throughput_tok_s": 4.1312781531052005
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ht_communication_aware_greedy_tp1_ep4_eager1.txt"
+    }
+  ]
+}

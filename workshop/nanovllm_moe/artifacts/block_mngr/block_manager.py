@@ -37,7 +37,7 @@ class BlockManager(BaseService):
     def reset(self):
         num_blocks = len(self.blocks)
         self.hash_to_block_id.clear()
-        [Block(i) for i in range(num_blocks)]
+        self.blocks = [Block(i) for i in range(num_blocks)]
         self.free_block_ids = deque(range(num_blocks))
         self.used_block_ids = set()
     
@@ -101,6 +101,8 @@ class BlockManager(BaseService):
         seq.block_table.clear()
 
     def can_append(self, seq: Sequence) -> bool:
+        if self.block_size == 1:
+            return len(self.free_block_ids) >= 1
         return len(self.free_block_ids) >= (len(seq) % self.block_size == 1)
     
     def may_append(self, seq: Sequence):

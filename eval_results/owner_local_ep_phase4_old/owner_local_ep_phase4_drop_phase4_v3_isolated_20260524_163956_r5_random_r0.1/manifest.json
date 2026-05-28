@@ -1,0 +1,69 @@
+{
+  "stage": "owner_local_ep_phase4_drop",
+  "run_dir": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase4_drop_phase4_v3_isolated_20260524_163956_r5_random_r0.1",
+  "args": {
+    "python": "/home/lzy/miniconda3/envs/vllm/bin/python",
+    "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+    "dataset_path": "/home/lzy/datasets/moe_benchmarks/gsm8k/main/test-00000-of-00001.parquet",
+    "dataset_label": "gsm8k",
+    "world_size": 8,
+    "tp_size": 1,
+    "data_parallel_size": 8,
+    "master_port": 29555,
+    "num_layers": -1,
+    "num_problems": 256,
+    "max_tokens": 192,
+    "max_model_len": 512,
+    "max_num_batched_tokens": 512,
+    "max_num_seqs": 8,
+    "gpu_memory_utilization": 0.9,
+    "output_root": "/home/lzy/Artifact-Infer/eval_results",
+    "run_id": "phase4_v3_isolated_20260524_163956_r5_random_r0.1",
+    "dry_run": false,
+    "prepare_only": false,
+    "timeout_s": 1200,
+    "gpu_ids": "0,1,2,3,4,5,6,7",
+    "cuda_home": "/usr/local/cuda-12.8",
+    "enforce_eager": 1,
+    "moe_ll_overflow_policy": "error",
+    "moe_ll_m_max": -1,
+    "phase3_summary": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase3_overlap_phase3_joint_align_phase2_ov025_merged_numa_fixed_20260522/summary.json",
+    "baselines": "round_robin/numa_local_first/min_communication",
+    "overlap": 0.25,
+    "drop_policies": "random",
+    "drop_rates": "0.10",
+    "drop_seed": 0,
+    "num_repeats": 1,
+    "warmup_cases": 0,
+    "prompt_style": "reasoning_brief",
+    "score_mode": "answer_first",
+    "impl": "ep_ht",
+    "ep_size": 8,
+    "runtime_mode": "owner_local_ep",
+    "prepared_dataset_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase4_drop_phase4_v3_isolated_20260524_163956_r5_random_r0.1/prepared/gsm8k_owner_local_ep.parquet"
+  },
+  "phase3_summary_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase3_overlap_phase3_joint_align_phase2_ov025_merged_numa_fixed_20260522/summary.json",
+  "dataset": {
+    "source": "/home/lzy/datasets/moe_benchmarks/gsm8k/main/test-00000-of-00001.parquet",
+    "prepared_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase4_drop_phase4_v3_isolated_20260524_163956_r5_random_r0.1/prepared/gsm8k_owner_local_ep.parquet",
+    "preview_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase4_drop_phase4_v3_isolated_20260524_163956_r5_random_r0.1/prepared/gsm8k_owner_local_ep.preview.json",
+    "num_rows": 256,
+    "prompt_format": "answer_only_plain_number_or_short_expression"
+  },
+  "baselines": [
+    "round_robin__numa_local_first__min_communication"
+  ],
+  "drop_policies": [
+    "random"
+  ],
+  "drop_rates": [
+    0.1
+  ],
+  "commands": [
+    {
+      "name": "runtime_round_robin__numa_local_first__min_communication__random__r0.1",
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase4_drop_phase4_v3_isolated_20260524_163956_r5_random_r0.1/prepared/gsm8k_owner_local_ep.parquet --dataset-label gsm8k --world-size 8 --tp-size 1 --data-parallel-size 8 --master-port 29555 --moe-impl ep_ht --moe-runtime-mode owner_local_ep --moe-expert-placement round_robin --moe-expert-placement-seed 0 --num-layers -1 --num-problems 256 --max-tokens 192 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 8 --gpu-memory-utilization 0.9 --enforce-eager 1 --moe-ll-overflow-policy error --moe-profile-routing 0 --moe-profile-overlap-runtime 1 --output-dir /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase4_drop_phase4_v3_isolated_20260524_163956_r5_random_r0.1/results/round_robin__numa_local_first__min_communication__random__r0.1 --moe-expert-overlap-value 0.25 --moe-expert-overlap-strategy min_communication --moe-expert-placement-path /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase2_owner_local_ep_256_20260520_021156/placements/moe_placement_round_robin_20260520_022258.json --moe-expert-overlap-path /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase3_overlap_phase3_joint_align_phase2_ov025_merged_numa_fixed_20260522/overlap_plans/moe_overlap_plan_round_robin__numa_local_first__ov0p25_min_communication_20260522_170527.json --moe-drop-policy random --moe-drop-rate 0.1 --moe-drop-seed 0 --prompt-style reasoning_brief --score-mode answer_first"
+    }
+  ],
+  "completed_at": "2026-05-24T17:50:06"
+}

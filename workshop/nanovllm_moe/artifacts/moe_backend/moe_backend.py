@@ -232,10 +232,10 @@ class MoeBackend(BaseService):
         EP-HT layout differs from single-rank in two ways:
           1. Inner-kernel intermediate caches are sized for `total_recv` rows
              with K_in=1 (each received row routes to exactly one local expert).
-             We size to `2 * T_cap * K_global` as a safety margin against
-             routing imbalance — production engines size based on EPLB bounds.
+             We size to the strict per-rank worst case: every source rank routes
+             all local token replicas to this destination rank.
           2. moe_align_block_size buffers are sized for E_local experts and
-             worst-case `2 * T_cap * K_global` recv rows.
+             worst-case `ep_size * T_cap * K_global` recv rows.
           3. Variable-size all_to_all payload buffers are NOT pre-allocated —
              they're created per-call in DispatchEPHT/CombineEPHT (sizes
              depend on per-batch routing).
@@ -249,14 +249,29 @@ class MoeBackend(BaseService):
         )
         self.world_size = get_ep_world_size()
         self.rank = get_ep_rank()
-        assert self.E % self.world_size == 0, (
-            f"num_experts={self.E} must be divisible by ep_size={self.world_size}"
-        )
-        self.E_local = self.E // self.world_size
+        if getattr(self.config, "moe_expert_overlap_enabled", False):
+            from workshop.nanovllm_moe.services.utils.expert_overlap import (
+                load_expert_overlap_plan,
+            )
+            overlap_plan = load_expert_overlap_plan(
+                num_experts=self.E,
+                world_size=self.world_size,
+                overlap_path=getattr(self.config, "moe_expert_overlap_path", None),
+            )
+            self.E_local = len(overlap_plan.experts_by_rank[self.rank])
+        else:
+            assert self.E % self.world_size == 0, (
+                f"num_experts={self.E} must be divisible by ep_size={self.world_size}"
+            )
+            self.E_local = self.E // self.world_size
+        if self.E_local <= 0:
+            raise RuntimeError(f"rank {self.rank} hosts zero experts in EP-HT")
 
-        # Worst-case recv rows on this rank; safety margin = 2x balanced average.
-        # If exceeded at runtime we'll get a clear assertion in triton_fused_moe.
-        self.T_recv_cap = 2 * self.T_cap * self.K
+        # Strict worst-case recv rows on this rank. Each of the EP ranks can send
+        # up to T_cap * K replicas to the same destination rank under a hot or
+        # unlucky placement. The previous 2x balanced bound was too small for
+        # ws8 and for random/profile-based placements on GSM.
+        self.T_recv_cap = self.world_size * self.T_cap * self.K
         K_in = 1   # each received row routes to one local expert
 
         # === Intermediate caches sized for [T_recv_cap, 1, X] ===
@@ -300,6 +315,11 @@ class MoeBackend(BaseService):
 
     def prepare_metadata_for_moe(self, num_tokens: int) -> None:
         """Per-batch reset, called by ModelRunner.prepare_{prefill,decode}."""
+        if int(num_tokens) > self.T_cap:
+            raise RuntimeError(
+                f"MoE batch has {int(num_tokens)} tokens, exceeding "
+                f"max_num_batched_tokens/T_cap={self.T_cap}"
+            )
         if self.is_ep_ll:
             # No per-batch reset needed for EP-LL: send_buf is fully rewritten by
             # DispatchEPLL on every call (zero + populate). original_indices is also
@@ -322,6 +342,11 @@ class MoeBackend(BaseService):
         num_tokens_post_padded: torch.Tensor,   # int32 [1]
     ) -> torch.Tensor:
         """Returns a view of `intermediate_cache3` of shape [T, K, H]."""
+        if hidden_states.size(0) > self.intermediate_cache1.size(0):
+            raise RuntimeError(
+                f"MoE expert input has {hidden_states.size(0)} rows, but "
+                f"workspace capacity is {self.intermediate_cache1.size(0)}"
+            )
         return self._fused_moe_fn(
             hidden_states=hidden_states,
             w1=w1,

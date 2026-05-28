@@ -1,0 +1,59 @@
+{
+  "stage": "owner_local_ep_phase0",
+  "run_dir": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156",
+  "args": {
+    "python": "/home/lzy/miniconda3/envs/vllm/bin/python",
+    "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+    "dataset_path": "/home/lzy/datasets/moe_benchmarks/gsm8k/main/test-00000-of-00001.parquet",
+    "dataset_label": "gsm8k",
+    "world_size": 8,
+    "tp_size": 1,
+    "data_parallel_size": 8,
+    "master_port": 29555,
+    "num_layers": 2,
+    "num_problems": 4,
+    "max_tokens": 16,
+    "max_model_len": 512,
+    "max_num_batched_tokens": 512,
+    "max_num_seqs": 4,
+    "gpu_memory_utilization": 0.9,
+    "output_root": "/home/lzy/Artifact-Infer/eval_results",
+    "run_id": "owner_local_ep_256_20260520_021156",
+    "dry_run": false,
+    "prepare_only": false,
+    "timeout_s": 7200,
+    "gpu_ids": "0,1,2,3,4,5,6,7",
+    "cuda_home": "/usr/local/cuda",
+    "enforce_eager": 1,
+    "moe_ll_overflow_policy": "error",
+    "moe_ll_m_max": -1,
+    "impls": "ep_ll_torch,ep_ll_triton,ep_ht",
+    "ep_size": 8,
+    "runtime_mode": "owner_local_ep",
+    "prepared_dataset_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/prepared/gsm8k_owner_local_ep.parquet"
+  },
+  "dataset": {
+    "source": "/home/lzy/datasets/moe_benchmarks/gsm8k/main/test-00000-of-00001.parquet",
+    "prepared_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/prepared/gsm8k_owner_local_ep.parquet",
+    "preview_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/prepared/gsm8k_owner_local_ep.preview.json",
+    "num_rows": 4,
+    "prompt_format": "answer_only_plain_number_or_short_expression"
+  },
+  "commands": [
+    {
+      "name": "ep_ll_torch_contiguous",
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/prepared/gsm8k_owner_local_ep.parquet --dataset-label gsm8k --world-size 8 --tp-size 1 --data-parallel-size 8 --master-port 29555 --moe-impl ep_ll_torch --moe-runtime-mode owner_local_ep --moe-expert-placement contiguous --moe-expert-placement-seed 0 --num-layers 2 --num-problems 4 --max-tokens 16 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 4 --gpu-memory-utilization 0.9 --enforce-eager 1 --moe-ll-overflow-policy error --moe-profile-routing 1 --output-dir /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/profiles/ep_ll_torch_contiguous",
+      "output_dir": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/profiles/ep_ll_torch_contiguous"
+    },
+    {
+      "name": "ep_ll_triton_contiguous",
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/prepared/gsm8k_owner_local_ep.parquet --dataset-label gsm8k --world-size 8 --tp-size 1 --data-parallel-size 8 --master-port 29556 --moe-impl ep_ll_triton --moe-runtime-mode owner_local_ep --moe-expert-placement contiguous --moe-expert-placement-seed 0 --num-layers 2 --num-problems 4 --max-tokens 16 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 4 --gpu-memory-utilization 0.9 --enforce-eager 1 --moe-ll-overflow-policy error --moe-profile-routing 1 --output-dir /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/profiles/ep_ll_triton_contiguous",
+      "output_dir": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/profiles/ep_ll_triton_contiguous"
+    },
+    {
+      "name": "ep_ht_contiguous",
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/prepared/gsm8k_owner_local_ep.parquet --dataset-label gsm8k --world-size 8 --tp-size 1 --data-parallel-size 8 --master-port 29557 --moe-impl ep_ht --moe-runtime-mode owner_local_ep --moe-expert-placement contiguous --moe-expert-placement-seed 0 --num-layers 2 --num-problems 4 --max-tokens 16 --max-model-len 512 --max-num-batched-tokens 512 --max-num-seqs 4 --gpu-memory-utilization 0.9 --enforce-eager 1 --moe-ll-overflow-policy error --moe-profile-routing 1 --output-dir /home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/profiles/ep_ht_contiguous",
+      "output_dir": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase0_owner_local_ep_256_20260520_021156/profiles/ep_ht_contiguous"
+    }
+  ]
+}

@@ -44,6 +44,8 @@ class RotaryEmbedding(nn.Module):
         key: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         num_tokens = positions.size(0)
+        if num_tokens == 0:
+            return query, key
         cos_sin = self.cos_sin_cache[positions]
         cos, sin = cos_sin.chunk(2, dim=-1)
         query_shape = query.shape

@@ -1,3 +1,5 @@
+import os
+
 import torch
 from torch import nn
 import triton
@@ -8,14 +10,10 @@ try:
 except ImportError:
     flash_attn_varlen_func = flash_attn_with_kvcache = None  # type: ignore[assignment]
 from flashinfer import BatchDecodeWithPagedKVCacheWrapper, BatchPrefillWithPagedKVCacheWrapper, BatchPrefillWithRaggedKVCacheWrapper
-from flashinfer.decode import _get_range_buf, get_seq_lens, fast_decode_plan
 
 from flashinfer.cascade import merge_state
 
-from flashinfer.quantization import segment_packbits
-
 import itertools
-from typing import Optional, Union
 
 from workshop.nanovllm_moe.services.utils.context import get_context
 from workshop.nanovllm_moe.services.engine.sequence import Sequence
@@ -23,7 +21,6 @@ from workshop.nanovllm_moe.services.engine.sequence import Sequence
 from src.core.artifact import Artifact
 from src.core.service import BaseService
 
-from functools import partial 
 from dataclasses import dataclass
 
 
@@ -64,6 +61,21 @@ def store_kvcache(key: torch.Tensor, value: torch.Tensor, k_cache: torch.Tensor,
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
     store_kvcache_kernel[(N,)](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
+
+
+def _debug_sync(stage: str) -> None:
+    if os.environ.get("MOE_EPHT_DEBUG_SYNC", "0") == "1":
+        torch.cuda.synchronize()
+
+
+def _decode_wrapper_mode() -> str:
+    mode = os.environ.get("MOE_FLASHINFER_DECODE_WRAPPER", "decode").strip().lower()
+    if mode not in ("decode", "prefill"):
+        raise ValueError(
+            "MOE_FLASHINFER_DECODE_WRAPPER must be 'decode' or 'prefill', "
+            f"got {mode!r}"
+        )
+    return mode
 
 
 class Attention(Artifact, nn.Module):
@@ -147,6 +159,7 @@ class Attention(Artifact, nn.Module):
             "NHD", 
             backend="fa2",
         )
+        self.forward_wrapper = self.decode_wrapper
         
         self.decode_cuda_graph_metadata = {}
                
@@ -156,6 +169,9 @@ class Attention(Artifact, nn.Module):
             self._register_method(method, service)
     
     def prepare_metadata_for_attn_prefill(self, seqs: list[Sequence]):
+        if not seqs:
+            self.prefill_metadata = PrefillMetadata(use_ragged=True, no_prefix=True)
+            return
         context = get_context()
         
         cu_seqlens_q = context.cu_seqlens_q
@@ -208,6 +224,8 @@ class Attention(Artifact, nn.Module):
     
     def prepare_metadata_for_attn_decode(self, seqs: list[Sequence]):
         """See https://docs.flashinfer.ai/tutorials/kv_layout.html#page-table-layout for metadata required for flashinfer kernel"""
+        if not seqs:
+            return
         kv_indptr = torch.cumsum(
             torch.tensor([0] + [len(seq.block_table) for seq in seqs], device="cuda"),
             dim=0,
@@ -220,30 +238,32 @@ class Attention(Artifact, nn.Module):
         ).to(torch.int32)
 
         qo_indptr = torch.arange(len(seqs) + 1, device="cuda").to(torch.int32)
-        
-        # self.decode_wrapper.plan(
-        #     indptr=kv_indptr, 
-        #     indices=kv_page_indices,
-        #     last_page_len=kv_last_page_lens, 
-        #     num_qo_heads=self.num_heads,
-        #     num_kv_heads=self.num_kv_heads,  
-        #     head_dim=self.head_dim, 
-        #     page_size=self.block_size, 
-        #     q_data_type=torch.bfloat16, 
-        # )
-        mask_arr = [
-            torch.full((len(seq.block_table),), True, device="cuda") for seq in seqs   
-        ]
-
-        mask = torch.cat(mask_arr, dim=0)
-        mask_indptr = kv_indptr.clone()
-        
-        packed_custom_mask, mask_indptr = segment_packbits(
-            mask.contiguous().view(-1),
-            mask_indptr,
-            bitorder="little",
+        self._debug_validate_decode_metadata(
+            seqs,
+            kv_indptr,
+            kv_page_indices,
+            kv_last_page_lens,
+            stage="eager",
         )
-        
+
+        if _decode_wrapper_mode() == "decode":
+            self.decode_wrapper.plan(
+                indptr=kv_indptr,
+                indices=kv_page_indices,
+                last_page_len=kv_last_page_lens,
+                num_qo_heads=self.num_heads,
+                num_kv_heads=self.num_kv_heads,
+                head_dim=self.head_dim,
+                page_size=self.block_size,
+                q_data_type=torch.bfloat16,
+                sm_scale=self.scale,
+            )
+            self.forward_wrapper = self.decode_wrapper
+            return
+
+        # Legacy bisect path. Do not pass a synthetic all-true custom mask here:
+        # FlashInfer paged prefill masks are token-level, and undersized packed
+        # masks can make the kernel read past the mask allocation.
         self.decode_prefill_wrapper.plan(
             qo_indptr=qo_indptr, 
             paged_kv_indptr=kv_indptr,
@@ -252,123 +272,192 @@ class Attention(Artifact, nn.Module):
             num_qo_heads=self.num_heads,
             num_kv_heads=self.num_kv_heads,
             head_dim_qk=self.head_dim,
-            # causal=True, 
-            # custom_mask=mask, 
-            packed_custom_mask=packed_custom_mask, 
+            causal=False,
             page_size=self.block_size,
             q_data_type=torch.bfloat16,
+            sm_scale=self.scale,
         )
         self.forward_wrapper = self.decode_prefill_wrapper
 
+    def _debug_validate_decode_metadata(
+        self,
+        seqs: list[Sequence],
+        kv_indptr: torch.Tensor,
+        kv_page_indices: torch.Tensor,
+        kv_last_page_lens: torch.Tensor,
+        stage: str,
+    ) -> None:
+        if os.environ.get("MOE_FLASHINFER_DEBUG_METADATA", "0") != "1":
+            return
+
+        indptr = kv_indptr.detach().cpu().tolist()
+        indices = kv_page_indices.detach().cpu().tolist()
+        last_page_lens = kv_last_page_lens.detach().cpu().tolist()
+        bs = len(seqs)
+        if len(indptr) != bs + 1:
+            raise RuntimeError(f"{stage}: kv_indptr length {len(indptr)} != bs + 1 {bs + 1}")
+        if len(last_page_lens) != bs:
+            raise RuntimeError(f"{stage}: last_page_lens length {len(last_page_lens)} != bs {bs}")
+        if indptr[0] != 0 or any(indptr[i] > indptr[i + 1] for i in range(bs)):
+            raise RuntimeError(f"{stage}: kv_indptr is not a monotonic CSR indptr: {indptr}")
+        if indptr[-1] != len(indices):
+            raise RuntimeError(
+                f"{stage}: kv_indptr[-1] {indptr[-1]} != page indices length {len(indices)}"
+            )
+        bad_page = next(
+            (
+                page
+                for page in indices
+                if page < 0 or page >= self.config.num_kvcache_blocks
+            ),
+            None,
+        )
+        if bad_page is not None:
+            raise RuntimeError(
+                f"{stage}: KV page id {bad_page} outside [0, {self.config.num_kvcache_blocks})"
+            )
+        for i, seq in enumerate(seqs):
+            num_pages = indptr[i + 1] - indptr[i]
+            last_len = last_page_lens[i]
+            if num_pages != len(seq.block_table):
+                raise RuntimeError(
+                    f"{stage}: seq {i} has {len(seq.block_table)} blocks but metadata has {num_pages}"
+                )
+            if last_len < 1 or last_len > self.block_size:
+                raise RuntimeError(
+                    f"{stage}: seq {i} last_page_len {last_len} outside [1, {self.block_size}]"
+                )
+            expected_tokens = (num_pages - 1) * self.block_size + last_len
+            if expected_tokens != len(seq):
+                raise RuntimeError(
+                    f"{stage}: seq {i} metadata length {expected_tokens} != sequence length {len(seq)}"
+                )
+
     def _update_indices(self, 
                        bs: int, 
-                    #    decode_wrapper: BatchDecodeWithPagedKVCacheWrapper,
-                       decode_wrapper: BatchPrefillWithPagedKVCacheWrapper, 
+                       decode_wrapper: BatchDecodeWithPagedKVCacheWrapper | BatchPrefillWithPagedKVCacheWrapper,
                        cu_page_indices: torch.Tensor, 
-                       seq_lens: torch.Tensor, 
+                       page_counts: torch.Tensor,
+                       last_page_lens: torch.Tensor | None = None,
                        ):
-        self.qo_indptr[:bs + 1] = torch.arange(bs + 1, device="cuda").to(torch.int32)
+        self.qo_indptr[:bs + 1] = torch.arange(bs + 1, device="cuda", dtype=torch.int32)
         qo_indptr = self.qo_indptr[:bs + 1]   
-    
-        self.kv_indptr[: bs + 1] = torch.cumsum(seq_lens, dim=0)
+
+        # Decode cudagraph replay passes KV page counts, not token lengths.
+        # We cumsum here to rebuild the CSR-style page-table indptr.
+        page_counts = page_counts.to(device="cuda", dtype=torch.int32)
+        if page_counts.numel() >= bs + 1:
+            self.kv_indptr[: bs + 1] = torch.cumsum(page_counts[: bs + 1], dim=0)
+        elif page_counts.numel() == bs:
+            self.kv_indptr[0] = 0
+            self.kv_indptr[1: bs + 1] = torch.cumsum(page_counts[:bs], dim=0)
+        else:
+            raise RuntimeError(
+                f"decode cuda graph page-count tensor has {page_counts.numel()} entries for bs={bs}"
+            )
         kv_indptr = self.kv_indptr[: bs + 1]
-                
-        kv_indices = decode_wrapper._paged_kv_indices_buf
-        kv_indices[: cu_page_indices.shape[0]] = cu_page_indices
-        
-        mask_indptr = kv_indptr.clone()
-        
-        packed_custom_mask, mask_indptr = segment_packbits(
-            torch.full((kv_indptr[bs],), True, device="cuda"),
-            mask_indptr,
-            bitorder="little",
-        )
-        
-        packed_custom_mask = self.custom_mask_buf[: packed_custom_mask.shape[0]] = packed_custom_mask
-        
+
+        cu_page_indices = cu_page_indices.to(device="cuda", dtype=torch.int32)
+        if int(kv_indptr[-1].item()) > cu_page_indices.numel():
+            raise RuntimeError(
+                f"decode cuda graph needs {int(kv_indptr[-1].item())} page indices, "
+                f"got {cu_page_indices.numel()}"
+            )
+
+        if last_page_lens is not None:
+            self.kv_last_page_len[:bs] = last_page_lens[:bs].to(
+                device="cuda", dtype=torch.int32
+            )
+        last_page_len = self.kv_last_page_len[:bs]
+
+        if isinstance(decode_wrapper, BatchDecodeWithPagedKVCacheWrapper):
+            decode_wrapper.begin_forward(
+                indptr=kv_indptr,
+                indices=cu_page_indices,
+                last_page_len=last_page_len,
+                num_qo_heads=self.num_heads,
+                num_kv_heads=self.num_kv_heads,
+                head_dim=self.head_dim,
+                page_size=self.block_size,
+                q_data_type=torch.bfloat16,
+                sm_scale=self.scale,
+                non_blocking=True,
+            )
+            return
+
         decode_wrapper.begin_forward(
-            qo_indptr=qo_indptr, 
+            qo_indptr=qo_indptr,
             paged_kv_indptr=kv_indptr,
-            paged_kv_indices=kv_indices,
-            paged_kv_last_page_len=self.kv_last_page_len[:bs],
-            packed_custom_mask=packed_custom_mask,
-            # causal=True, 
+            paged_kv_indices=cu_page_indices,
+            paged_kv_last_page_len=last_page_len,
+            causal=False,
             num_qo_heads=self.num_heads,
             num_kv_heads=self.num_kv_heads,
             head_dim_qk=self.head_dim,
             page_size=self.block_size,
-            q_data_type=torch.bfloat16, 
+            q_data_type=torch.bfloat16,
+            sm_scale=self.scale,
             non_blocking=True,
         )
-        # decode_wrapper.begin_forward(
-        #     indptr=kv_indptr,
-        #     indices=kv_indices,
-        #     last_page_len=self.kv_last_page_len[:bs],
-        #     num_qo_heads=self.num_heads,
-        #     num_kv_heads=self.num_kv_heads,
-        #     head_dim=self.head_dim,
-        #     page_size=self.block_size,
-        #     q_data_type=torch.bfloat16, 
-        #     non_blocking=True,
-        # )
 
     def init_forward_metadata_capture_cuda_graph(
         self, 
         bs: int, 
-        seq_lens: torch.Tensor, 
+        page_counts: torch.Tensor,
         cu_page_indices: torch.Tensor, 
+        last_page_lens: torch.Tensor | None = None,
     ):
 
-        # decode_wrapper = BatchDecodeWithPagedKVCacheWrapper(
-        #     self.workspace_buffer, 
-        #     "NHD", 
-        #     use_cuda_graph=True, 
-        #     use_tensor_cores=True, 
-        #     paged_kv_indptr_buffer=self.kv_indptr[:bs + 1], 
-        #     paged_kv_indices_buffer=self.cuda_graph_kv_indices, 
-        #     paged_kv_last_page_len_buffer=self.kv_last_page_len[:bs], 
-        # )
-        decode_wrapper = BatchPrefillWithPagedKVCacheWrapper(
-            self.workspace_buffer,
-            "NHD",
-            use_cuda_graph=True, 
-            # use_tensor_cores=True, 
-            qo_indptr_buf=self.qo_indptr[:bs + 1],
-            paged_kv_indptr_buf=self.kv_indptr[:bs + 1],
-            paged_kv_indices_buf=self.cuda_graph_kv_indices, 
-            paged_kv_last_page_len_buf=self.kv_last_page_len[:bs], 
-            custom_mask_buf=self.custom_mask_buf,
-            mask_indptr_buf=self.mask_indptr_buf[:bs + 1],
-        )
+        if _decode_wrapper_mode() == "decode":
+            decode_wrapper = BatchDecodeWithPagedKVCacheWrapper(
+                self.workspace_buffer,
+                "NHD",
+                use_cuda_graph=True,
+                use_tensor_cores=True,
+                paged_kv_indptr_buffer=self.kv_indptr[:bs + 1],
+                paged_kv_indices_buffer=self.cuda_graph_kv_indices,
+                paged_kv_last_page_len_buffer=self.kv_last_page_len[:bs],
+            )
+        else:
+            decode_wrapper = BatchPrefillWithPagedKVCacheWrapper(
+                self.workspace_buffer,
+                "NHD",
+                use_cuda_graph=True,
+                qo_indptr_buf=self.qo_indptr[:bs + 1],
+                paged_kv_indptr_buf=self.kv_indptr[:bs + 1],
+                paged_kv_indices_buf=self.cuda_graph_kv_indices,
+                paged_kv_last_page_len_buf=self.kv_last_page_len[:bs],
+            )
         
         self._update_indices(
             bs, 
             decode_wrapper, 
             cu_page_indices, 
-            seq_lens
+            page_counts,
+            last_page_lens,
         )
-        # TODO look into sglang's patch to find why there is an performance gain in flashinfer plan
-        # decode_wrapper.begin_forward = partial(
-        #     fast_decode_plan, decode_wrapper
-        # )
         self.decode_cuda_graph_metadata[bs] = decode_wrapper
         self.forward_wrapper = decode_wrapper
     
     def init_forward_metadata_replay_cuda_graph(
         self, 
         bs: int, 
-        seq_lens: torch.Tensor,  
+        page_counts: torch.Tensor,
         cu_page_indices: torch.Tensor, 
+        last_page_lens: torch.Tensor | None = None,
     ):
         self._update_indices(
             bs, 
             self.decode_cuda_graph_metadata[bs], 
             cu_page_indices, 
-            seq_lens[:bs + 1]
+            page_counts[:bs + 1],
+            last_page_lens,
         )
 
     def attn(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor): 
         o: torch.Tensor
+        if q.numel() == 0:
+            return q.new_empty((0, self.num_heads * self.head_dim))
         q = q.view(-1, self.num_heads, self.head_dim)
         k = k.view(-1, self.num_kv_heads, self.head_dim)
         v = v.view(-1, self.num_kv_heads, self.head_dim)
@@ -377,6 +466,7 @@ class Attention(Artifact, nn.Module):
         k_cache, v_cache = self.k_cache, self.v_cache
         if k_cache.numel() and v_cache.numel():
             store_kvcache(k, v, k_cache, v_cache, context.slot_mapping)
+            _debug_sync("store_kvcache")
         if context.is_prefill:
             # o = self.prefill_wrapper_paged.forward(
             #     q, (self.k_cache, self.v_cache), causal=True, sm_scale=self.scale
@@ -390,18 +480,23 @@ class Attention(Artifact, nn.Module):
                     causal=True,
                     sm_scale=self.scale, 
                 )
+                _debug_sync("prefill_ragged")
             else:
                 o1, s1 = self.prefill_wrapper_ragged.forward_return_lse(
                     q, k, v, causal=True, sm_scale=self.scale,
                 )
+                _debug_sync("prefill_ragged_lse")
                 o2, s2 = self.prefill_wrapper_paged.forward_return_lse(
                     q, (self.k_cache, self.v_cache), causal=False, sm_scale=self.scale,
                 )
+                _debug_sync("prefill_paged_lse")
                 
                 o, _ = merge_state(o1, s1, o2, s2)
+                _debug_sync("prefill_merge")
         else:    # decode
             # self.prepare_metadata(seqs)
             o = self.forward_wrapper.forward(q, (self.k_cache, self.v_cache))
+            _debug_sync("decode_forward")
             # o = self.decode_prefill_wrapper.forward(q, (self.k_cache, self.v_cache))
             # o_base = self.decode_wrapper.forward(q, (self.k_cache, self.v_cache))
             # assert torch.allclose(o, o_base, rtol=1e-3, atol=1e-3)

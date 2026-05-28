@@ -1,0 +1,52 @@
+{
+  "config": {
+    "output_dir": "/home/lzy/Artifact-Infer/eval_results/longbench_official_baseline_2wikimqa_v2",
+    "model": "/home/lzy/models/Qwen3-30B-A3B",
+    "task": "2wikimqa",
+    "dataset_jsonl": "",
+    "num_samples": 64,
+    "batch_size": 8,
+    "min_prompt_tokens": 500,
+    "max_prompt_tokens": 5800,
+    "expert_overlap_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase3_overlap_phase3_joint_align_phase2_ov025_merged_numa_fixed_20260522/overlap_plans/moe_overlap_plan_load_balanced_greedy_with_locality_tiebreak__numa_local_first__ov0p25_greedy_balance_20260522_171150.json",
+    "expert_overlap_strategy": "greedy_balance",
+    "max_num_batched_tokens": 6144,
+    "gpu_memory_utilization": 0.92,
+    "warmup_batches": 2,
+    "seed": 42
+  },
+  "task": "2wikimqa",
+  "max_new_tokens_official": 64,
+  "n_samples": 64,
+  "n_batches": 8,
+  "system_throughput_tok_s_prefill": 5346.606547046702,
+  "perf": {
+    "total_prefill_s": 52.079949693288654,
+    "total_decode_s": 94.24545256607234,
+    "total_e2e_s": 147.18243306176737,
+    "total_prompt_tokens": 278451,
+    "total_decode_tokens": 504,
+    "mean_prefill_per_batch_s": 6.509993711661082,
+    "mean_e2e_per_batch_s": 18.39780413272092
+  },
+  "accuracy": {
+    "lb_f1": {
+      "mean": 0.06942087415678017,
+      "std": 0.08786948965250149,
+      "sem": 0.010983686206562687,
+      "n": 64
+    },
+    "lb_recall": {
+      "mean": 0.5151041666666667,
+      "std": 0.47856817926454903,
+      "sem": 0.05982102240806863,
+      "n": 64
+    },
+    "rougeL": {
+      "mean": 0.06771666866660137,
+      "std": 0.08490484912401071,
+      "sem": 0.010613106140501339,
+      "n": 64
+    }
+  }
+}

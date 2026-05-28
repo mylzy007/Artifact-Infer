@@ -10,6 +10,8 @@ Diff from `qwen3.py`:
 
 from __future__ import annotations
 
+import os
+
 import torch
 from torch import nn
 import torch.distributed as dist
@@ -84,18 +86,28 @@ class Qwen3MoeAttention(Artifact, nn.Module):
         self.q_norm = RMSNorm(self.head_dim, eps=rms_norm_eps)
         self.k_norm = RMSNorm(self.head_dim, eps=rms_norm_eps)
 
+    def _debug_sync(self, stage: str) -> None:
+        if os.environ.get("MOE_EPHT_DEBUG_SYNC", "0") == "1":
+            torch.cuda.synchronize()
+
     def forward(self, positions: torch.Tensor, hidden_states: torch.Tensor) -> torch.Tensor:
         qkv = self.qkv_proj(hidden_states)
+        self._debug_sync("qkv_proj")
         q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
         q_by_head = q.view(-1, self.num_heads, self.head_dim)
         q_by_head = self.q_norm(q_by_head)
+        self._debug_sync("q_norm")
         q = q_by_head.view(q.shape)
         k_by_head = k.view(-1, self.num_kv_heads, self.head_dim)
         k_by_head = self.k_norm(k_by_head)
+        self._debug_sync("k_norm")
         k = k_by_head.view(k.shape)
         q, k = self.rotary_emb(positions, q, k)
+        self._debug_sync("rotary")
         o = self.attn(q, k, v)
+        self._debug_sync("attn")
         output = self.o_proj(o)
+        self._debug_sync("o_proj")
         return output
 
 
@@ -120,6 +132,18 @@ class Qwen3MoeDecoderLayer(nn.Module):
         moe_mode: str = "single",
         m_max: int = 0,
         ep_ll_dispatch_kernel: str = "triton",
+        expert_placement: str = "contiguous",
+        expert_placement_seed: int = 0,
+        expert_placement_path: str | None = None,
+        expert_overlap_enabled: bool = False,
+        expert_overlap_path: str | None = None,
+        expert_overlap_strategy: str = "hybrid",
+        ep_ll_overflow_policy: str = "drop",
+        drop_policy: str = "none",
+        drop_rate: float = 0.0,
+        drop_seed: int = 0,
+        router_keff: int = 0,
+        layer_id: int = -1,
     ) -> None:
         super().__init__()
         self.self_attn = Qwen3MoeAttention(
@@ -143,9 +167,25 @@ class Qwen3MoeDecoderLayer(nn.Module):
             moe_mode=moe_mode,
             m_max=m_max,
             ep_ll_dispatch_kernel=ep_ll_dispatch_kernel,
+            expert_placement=expert_placement,
+            expert_placement_seed=expert_placement_seed,
+            expert_placement_path=expert_placement_path,
+            expert_overlap_enabled=expert_overlap_enabled,
+            expert_overlap_path=expert_overlap_path,
+            expert_overlap_strategy=expert_overlap_strategy,
+            ep_ll_overflow_policy=ep_ll_overflow_policy,
+            drop_policy=drop_policy,
+            drop_rate=drop_rate,
+            drop_seed=drop_seed,
+            router_keff=router_keff,
+            layer_id=layer_id,
         )
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+    def _debug_sync(self, stage: str) -> None:
+        if os.environ.get("MOE_EPHT_DEBUG_SYNC", "0") == "1":
+            torch.cuda.synchronize()
 
     def forward(
         self,
@@ -158,9 +198,13 @@ class Qwen3MoeDecoderLayer(nn.Module):
             hidden_states = self.input_layernorm(hidden_states)
         else:
             hidden_states, residual = self.input_layernorm(hidden_states, residual)
+        self._debug_sync("input_layernorm")
         hidden_states = self.self_attn(positions, hidden_states)
+        self._debug_sync("self_attn")
         hidden_states, residual = self.post_attention_layernorm(hidden_states, residual)
+        self._debug_sync("post_attention_layernorm")
         hidden_states = self.mlp(hidden_states)
+        self._debug_sync("mlp")
         return hidden_states, residual
 
 
@@ -172,6 +216,17 @@ class Qwen3MoeModel(nn.Module):
         moe_mode: str = "single",
         m_max: int = 0,
         ep_ll_dispatch_kernel: str = "triton",
+        expert_placement: str = "contiguous",
+        expert_placement_seed: int = 0,
+        expert_placement_path: str | None = None,
+        expert_overlap_enabled: bool = False,
+        expert_overlap_path: str | None = None,
+        expert_overlap_strategy: str = "hybrid",
+        ep_ll_overflow_policy: str = "drop",
+        drop_policy: str = "none",
+        drop_rate: float = 0.0,
+        drop_seed: int = 0,
+        router_keff: int = 0,
     ) -> None:
         super().__init__()
         self.embed_tokens = VocabParallelEmbedding(config.vocab_size, config.hidden_size)
@@ -190,8 +245,20 @@ class Qwen3MoeModel(nn.Module):
                 moe_mode=moe_mode,
                 m_max=m_max,
                 ep_ll_dispatch_kernel=ep_ll_dispatch_kernel,
+                expert_placement=expert_placement,
+                expert_placement_seed=expert_placement_seed,
+                expert_placement_path=expert_placement_path,
+                expert_overlap_enabled=expert_overlap_enabled,
+                expert_overlap_path=expert_overlap_path,
+                expert_overlap_strategy=expert_overlap_strategy,
+                ep_ll_overflow_policy=ep_ll_overflow_policy,
+                drop_policy=drop_policy,
+                drop_rate=drop_rate,
+                drop_seed=drop_seed,
+                router_keff=router_keff,
+                layer_id=layer_id,
             )
-            for _ in range(config.num_hidden_layers)
+            for layer_id in range(config.num_hidden_layers)
         ])
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -220,6 +287,17 @@ class Qwen3MoeForCausalLM(Artifact, nn.Module):
         moe_mode: str = "single",
         m_max: int = 0,
         ep_ll_dispatch_kernel: str = "triton",
+        expert_placement: str = "contiguous",
+        expert_placement_seed: int = 0,
+        expert_placement_path: str | None = None,
+        expert_overlap_enabled: bool = False,
+        expert_overlap_path: str | None = None,
+        expert_overlap_strategy: str = "hybrid",
+        ep_ll_overflow_policy: str = "drop",
+        drop_policy: str = "none",
+        drop_rate: float = 0.0,
+        drop_seed: int = 0,
+        router_keff: int = 0,
     ) -> None:
         super().__init__()
         self.model = Qwen3MoeModel(
@@ -228,6 +306,17 @@ class Qwen3MoeForCausalLM(Artifact, nn.Module):
             moe_mode=moe_mode,
             m_max=m_max,
             ep_ll_dispatch_kernel=ep_ll_dispatch_kernel,
+            expert_placement=expert_placement,
+            expert_placement_seed=expert_placement_seed,
+            expert_placement_path=expert_placement_path,
+            expert_overlap_enabled=expert_overlap_enabled,
+            expert_overlap_path=expert_overlap_path,
+            expert_overlap_strategy=expert_overlap_strategy,
+            ep_ll_overflow_policy=ep_ll_overflow_policy,
+            drop_policy=drop_policy,
+            drop_rate=drop_rate,
+            drop_seed=drop_seed,
+            router_keff=router_keff,
         )
         self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
         if getattr(config, "tie_word_embeddings", False):

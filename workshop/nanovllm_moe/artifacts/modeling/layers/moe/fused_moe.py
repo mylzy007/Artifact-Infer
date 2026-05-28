@@ -15,6 +15,8 @@ into a thin subclass for clarity in the orchestrator wiring.
 
 from __future__ import annotations
 
+import os
+
 import torch
 from torch import nn
 
@@ -28,6 +30,7 @@ from workshop.nanovllm_moe.artifacts.modeling.layers.moe.dispatch_ep_ll import D
 from workshop.nanovllm_moe.artifacts.modeling.layers.moe.experts import Experts
 from workshop.nanovllm_moe.artifacts.modeling.layers.moe.experts_ep_ht import ExpertsEPHT
 from workshop.nanovllm_moe.artifacts.modeling.layers.moe.experts_ep_ll import ExpertsEPLL
+from workshop.nanovllm_moe.services.utils.parallel import get_runtime_mode, is_dp_leader
 
 
 class FusedMoE(nn.Module):
@@ -45,6 +48,18 @@ class FusedMoE(nn.Module):
         moe_mode: str = "single",            # "single" | "ep_ll" | "ep_ht"
         m_max: int = 0,
         ep_ll_dispatch_kernel: str = "triton",
+        expert_placement: str = "contiguous",
+        expert_placement_seed: int = 0,
+        expert_placement_path: str | None = None,
+        expert_overlap_enabled: bool = False,
+        expert_overlap_path: str | None = None,
+        expert_overlap_strategy: str = "hybrid",
+        ep_ll_overflow_policy: str = "drop",
+        drop_policy: str = "none",
+        drop_rate: float = 0.0,
+        drop_seed: int = 0,
+        router_keff: int = 0,
+        layer_id: int = -1,
     ) -> None:
         super().__init__()
         assert moe_mode in ("single", "ep_ll", "ep_ht"), f"unknown moe_mode {moe_mode!r}"
@@ -53,6 +68,7 @@ class FusedMoE(nn.Module):
         self.num_experts = num_experts
         self.top_k = top_k
         self.moe_mode = moe_mode
+        self.layer_id = int(layer_id)
         self.is_ep_ll = moe_mode == "ep_ll"
         self.is_ep_ht = moe_mode == "ep_ht"
 
@@ -67,11 +83,20 @@ class FusedMoE(nn.Module):
                 m_max=m_max,
                 norm_topk_prob=norm_topk_prob,
                 dispatch_kernel=ep_ll_dispatch_kernel,
+                expert_placement=expert_placement,
+                expert_placement_seed=expert_placement_seed,
+                expert_placement_path=expert_placement_path,
+                layer_id=self.layer_id,
+                overflow_policy=ep_ll_overflow_policy,
             )
             self.experts = ExpertsEPLL(
                 num_experts_global=num_experts,
                 hidden_size=hidden_size,
                 moe_intermediate_size=moe_intermediate_size,
+                expert_placement=expert_placement,
+                expert_placement_seed=expert_placement_seed,
+                expert_placement_path=expert_placement_path,
+                layer_id=self.layer_id,
             )
             self.combine = CombineEPLL(
                 hidden_size=hidden_size,
@@ -85,11 +110,28 @@ class FusedMoE(nn.Module):
                 top_k=top_k,
                 block_size_m=block_size_m,
                 norm_topk_prob=norm_topk_prob,
+                expert_placement=expert_placement,
+                expert_placement_seed=expert_placement_seed,
+                expert_placement_path=expert_placement_path,
+                expert_overlap_enabled=expert_overlap_enabled,
+                expert_overlap_path=expert_overlap_path,
+                expert_overlap_strategy=expert_overlap_strategy,
+                drop_policy=drop_policy,
+                drop_rate=drop_rate,
+                drop_seed=drop_seed,
+                router_keff=router_keff,
+                layer_id=self.layer_id,
             )
             self.experts = ExpertsEPHT(
                 num_experts_global=num_experts,
                 hidden_size=hidden_size,
                 moe_intermediate_size=moe_intermediate_size,
+                expert_placement=expert_placement,
+                expert_placement_seed=expert_placement_seed,
+                expert_placement_path=expert_placement_path,
+                expert_overlap_enabled=expert_overlap_enabled,
+                expert_overlap_path=expert_overlap_path,
+                layer_id=self.layer_id,
             )
             self.combine = CombineEPHT(hidden_size=hidden_size, top_k=top_k)
         else:
@@ -106,10 +148,23 @@ class FusedMoE(nn.Module):
             )
             self.combine = Combine(hidden_size=hidden_size, top_k=top_k)
 
+    def _debug_sync(self, stage: str) -> None:
+        if os.environ.get("MOE_EPHT_DEBUG_SYNC", "0") == "1":
+            torch.cuda.synchronize()
+
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         original_shape = hidden_states.shape
         x = hidden_states.view(-1, original_shape[-1])
-        router_logits = self.gate(x)                       # [T, E]
+        if self.is_ep_ht:
+            self._debug_sync("entry")
+        # vllm_dp_ep uses one TP leader as the routing source. owner_local_ep does not:
+        # every rank owns its local tokens and computes local router logits.
+        if self.is_ep_ht and get_runtime_mode() == "vllm_dp_ep" and not is_dp_leader():
+            router_logits = torch.empty((0,), dtype=x.dtype, device=x.device)
+        else:
+            router_logits = self.gate(x)                       # [T, E]
+        if self.is_ep_ht:
+            self._debug_sync("gate")
 
         if self.is_ep_ll:
             tok_meta = self.dispatch(x, router_logits)

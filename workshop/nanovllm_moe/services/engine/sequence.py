@@ -29,10 +29,16 @@ class Sequence:
         return seq
     
     @classmethod
-    def from_prompt(cls, token_ids: list[int], sampling_params = SamplingParams(), kvcache_block_size = 1):
+    def from_prompt(
+        cls,
+        token_ids: list[int],
+        sampling_params=SamplingParams(),
+        kvcache_block_size=1,
+        seq_id: int | None = None,
+    ):
         seq = cls()
         seq.block_size = kvcache_block_size
-        seq.seq_id = next(Sequence.counter)
+        seq.seq_id = next(Sequence.counter) if seq_id is None else int(seq_id)
         seq.status = SequenceStatus.WAITING
         seq.token_ids = copy(token_ids)
         seq.last_token = token_ids[-1]

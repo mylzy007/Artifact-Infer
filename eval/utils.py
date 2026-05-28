@@ -4,9 +4,15 @@ from math_verify.parser import ExprExtractionConfig, LatexExtractionConfig
 from math_verify import parse, verify
 from typing import Callable, Any
 import os
+import re
 from tqdm import tqdm
 from multiprocessing.pool import ThreadPool
 from collections import Counter
+
+
+_FINAL_ANSWER_BOXED_RE = re.compile(
+    r"Final\s*answer\s*:\s*\\?boxed\s*\{([^{}]*)\}", re.IGNORECASE
+)
 
 
 def evaluate(answer, ground_truth):
@@ -43,3 +49,28 @@ def evaluate(answer, ground_truth):
     #     pass
 
     return ret_score, preds
+
+
+def evaluate_answer_first(answer, ground_truth):
+    """Phase 4 evaluator. Prefer the boxed value after 'Final answer:' on the
+    first line. If not present, fall back to the existing math_verify pipeline.
+    """
+    text = "" if answer is None else str(answer)
+    match = _FINAL_ANSWER_BOXED_RE.search(text)
+    if match:
+        boxed = "\\boxed{" + match.group(1).strip() + "}"
+        try:
+            preds = parse(
+                boxed,
+                extraction_config=[ExprExtractionConfig(), LatexExtractionConfig()],
+            )
+            gold = parse(
+                "\\boxed{" + ground_truth + "}",
+                extraction_config=[LatexExtractionConfig()],
+            )
+            if verify(gold, preds, 6):
+                return 1.0, preds
+            return 0.0, preds
+        except Exception:
+            pass
+    return evaluate(answer, ground_truth)

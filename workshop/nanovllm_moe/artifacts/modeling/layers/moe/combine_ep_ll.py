@@ -10,7 +10,8 @@ Steps:
      The rows `[s*M_max:(s+1)*M_max]` for expert e are destined for source rank s.
   2. Reverse all_to_all_single: produces `output_recv: [N, E_local, M_max, H]` on the
      ORIGINAL sender rank, where slot [r, e, m] holds the output for whatever this
-     rank originally sent to (r, e, m).
+     rank originally sent to (r, e, m). In `owner_local_ep`, that sender is also
+     the local token owner.
   3. Scatter-reduce: for each slot, look up `original_indices[r, e, m] = (t, k)`.
      If t == -1, skip. Else accumulate `output_recv[r, e, m] * topk_weights[t, k]`
      into `final[t]`.

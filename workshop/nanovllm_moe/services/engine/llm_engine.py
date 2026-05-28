@@ -4,6 +4,7 @@ import os
 from time import perf_counter
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer
+import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
@@ -15,11 +16,16 @@ from ..model_runner.model_runner import ModelRunner
 from ...artifacts.block_mngr.block_manager import BlockManager
 from src.core.service import BaseService
 from src.core.orchestrator import RegistryOrchestrator
+from workshop.nanovllm_moe.services.utils.parallel import (
+    get_dp_world_size,
+    get_dp_rank,
+    is_dp_leader,
+)
 
 DUMMY_CREATION = os.getenv("DUMMY_CREATION", False)
 
 
-def _ensure_distributed(tp_size: int = 1):
+def _ensure_distributed(tp_size: int = 1, data_parallel_size: int = 1, runtime_mode: str = "legacy_tp_ep"):
     """Initialize torch.distributed and set up the TP × EP subgroups.
 
     Single-GPU path: initialize a one-rank gloo group so `dist.get_rank()` works,
@@ -45,7 +51,12 @@ def _ensure_distributed(tp_size: int = 1):
         torch.cuda.set_device(0)
 
     world_size = dist.get_world_size()
-    init_parallel_groups(tp_size=tp_size, world_size=world_size)
+    init_parallel_groups(
+        tp_size=tp_size,
+        world_size=world_size,
+        data_parallel_size=data_parallel_size,
+        runtime_mode=runtime_mode,
+    )
 
     torch.set_default_device(f"cuda:{torch.cuda.current_device()}")
 
@@ -61,7 +72,11 @@ class LLMEngine(BaseService):
             self.__post_init__()
 
     def __post_init__(self):
-        _ensure_distributed(tp_size=self.config.tensor_parallel_size)
+        _ensure_distributed(
+            tp_size=self.config.tensor_parallel_size,
+            data_parallel_size=self.config.data_parallel_size,
+            runtime_mode=self.config.moe_runtime_mode,
+        )
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model, use_fast=True)
         self.config.eos = self.tokenizer.eos_token_id
 
@@ -95,16 +110,81 @@ class LLMEngine(BaseService):
         self.scheduler.running.clear()
         self.block_mngr.reset()
 
-    def add_request(self, prompt: str | list[int], sampling_params: SamplingParams):
+    def add_request(
+        self,
+        prompt: str | list[int],
+        sampling_params: SamplingParams,
+        *,
+        seq_id: int | None = None,
+    ):
         if isinstance(prompt, str):
             prompt = self.tokenizer.encode(prompt)
-        seq = Sequence.from_prompt(prompt, sampling_params, self.config.kvcache_block_size)
+        seq = Sequence.from_prompt(
+            prompt,
+            sampling_params,
+            self.config.kvcache_block_size,
+            seq_id=seq_id,
+        )
         self.add(seq)
 
+    def _is_vllm_dp_ep(self) -> bool:
+        return self.config.moe_runtime_mode == "vllm_dp_ep" and dist.is_initialized() and dist.get_world_size() > 1
+
+    def _is_owner_local_ep(self) -> bool:
+        return self.config.moe_runtime_mode == "owner_local_ep" and dist.is_initialized() and dist.get_world_size() > 1
+
+    def _is_owner_sharded_mode(self) -> bool:
+        return self._is_vllm_dp_ep() or self._is_owner_local_ep()
+
+    def _local_prompt_indices(self, num_prompts: int) -> list[int]:
+        if not self._is_owner_sharded_mode():
+            return list(range(num_prompts))
+        dp_rank = get_dp_rank()
+        dp_size = get_dp_world_size()
+        return [idx for idx in range(num_prompts) if idx % dp_size == dp_rank]
+
+    def _all_dp_finished(self) -> bool:
+        local_finished = int(self.is_finished())
+        if not self._is_owner_sharded_mode():
+            return bool(local_finished)
+        flag = torch.tensor([local_finished], device=f"cuda:{torch.cuda.current_device()}", dtype=torch.int32)
+        dist.all_reduce(flag, op=dist.ReduceOp.MIN)
+        return bool(flag.item())
+
+    def _gather_outputs_owner_sharded(self, outputs: dict[int, list[int]]) -> list[dict]:
+        payload = outputs if (self._is_owner_local_ep() or is_dp_leader()) else {}
+        gathered = [None for _ in range(dist.get_world_size())]
+        dist.all_gather_object(gathered, payload)
+        if dist.get_rank() != 0:
+            return []
+        merged: dict[int, list[int]] = {}
+        for item in gathered:
+            if isinstance(item, dict):
+                merged.update(item)
+        return [
+            {"text": self.tokenizer.decode(merged[seq_id]), "token_ids": merged[seq_id]}
+            for seq_id in sorted(merged)
+        ]
+
     def step(self):
+        if self._is_owner_sharded_mode() and self.is_finished():
+            record_timing = os.environ.get("MOE_RECORD_TIMING", "1") == "1"
+            if record_timing:
+                torch.cuda.synchronize()
+            t = perf_counter()
+            self.run([], False)
+            if record_timing:
+                torch.cuda.synchronize()
+            excution_time = perf_counter() - t
+            return [], 0, excution_time
         seqs, is_prefill = self.schedule()
+        record_timing = os.environ.get("MOE_RECORD_TIMING", "1") == "1"
+        if record_timing:
+            torch.cuda.synchronize()
         t = perf_counter()
         token_ids = self.run(seqs, is_prefill)
+        if record_timing:
+            torch.cuda.synchronize()
         excution_time = perf_counter() - t
         self.postprocess(seqs, token_ids)
         outputs = [(seq.seq_id, seq.completion_token_ids) for seq in seqs if seq.is_finished]
@@ -117,17 +197,39 @@ class LLMEngine(BaseService):
         sampling_params: SamplingParams | list[SamplingParams],
         use_tqdm: bool = True,
     ) -> list[str]:
-        if use_tqdm:
+        if use_tqdm and (not self._is_owner_sharded_mode() or dist.get_rank() == 0):
             pbar = tqdm(total=len(prompts), desc="Generating", dynamic_ncols=True)
         if not isinstance(sampling_params, list):
             sampling_params = [sampling_params] * len(prompts)
-        for prompt, sp in zip(prompts, sampling_params):
-            self.add_request(prompt, sp)
+        for idx in self._local_prompt_indices(len(prompts)):
+            self.add_request(prompts[idx], sampling_params[idx], seq_id=idx)
         outputs = {}
+        metrics = {
+            "prefill_tokens": 0,
+            "prefill_time_s": 0.0,
+            "decode_tokens": 0,
+            "decode_time_s": 0.0,
+            "steps": [],
+        }
+        e2e_t0 = perf_counter()
         prefill_throughput = decode_throughput = 0.
-        while not self.is_finished():
+        while True:
+            if self._all_dp_finished():
+                break
             output, num_tokens, excution_time = self.step()
-            if use_tqdm:
+            step = {
+                "is_prefill": num_tokens > 0,
+                "tokens": abs(int(num_tokens)),
+                "time_s": float(excution_time),
+            }
+            metrics["steps"].append(step)
+            if num_tokens > 0:
+                metrics["prefill_tokens"] += int(num_tokens)
+                metrics["prefill_time_s"] += float(excution_time)
+            else:
+                metrics["decode_tokens"] += -int(num_tokens)
+                metrics["decode_time_s"] += float(excution_time)
+            if use_tqdm and (not self._is_owner_sharded_mode() or dist.get_rank() == 0):
                 if num_tokens > 0:
                     prefill_throughput = num_tokens / excution_time
                 else:
@@ -138,11 +240,24 @@ class LLMEngine(BaseService):
                 })
             for seq_id, token_ids in output:
                 outputs[seq_id] = token_ids
-            if use_tqdm:
+            if use_tqdm and (not self._is_owner_sharded_mode() or dist.get_rank() == 0):
                 pbar.update(1) 
+        metrics["e2e_total_time_s"] = perf_counter() - e2e_t0
+        metrics["prefill_throughput_tok_s"] = (
+            metrics["prefill_tokens"] / metrics["prefill_time_s"]
+            if metrics["prefill_time_s"] > 0 else 0.0
+        )
+        metrics["decode_throughput_tok_s"] = (
+            metrics["decode_tokens"] / metrics["decode_time_s"]
+            if metrics["decode_time_s"] > 0 else 0.0
+        )
+        self.last_generation_metrics = metrics
         self.reset()
-        outputs = [outputs[seq_id] for seq_id in sorted(outputs)]
-        outputs = [{"text": self.tokenizer.decode(token_ids), "token_ids": token_ids} for token_ids in outputs]
-        if use_tqdm:
+        if self._is_owner_sharded_mode():
+            outputs = self._gather_outputs_owner_sharded(outputs)
+        else:
+            outputs = [outputs[seq_id] for seq_id in sorted(outputs)]
+            outputs = [{"text": self.tokenizer.decode(token_ids), "token_ids": token_ids} for token_ids in outputs]
+        if use_tqdm and (not self._is_owner_sharded_mode() or dist.get_rank() == 0):
             pbar.close()
         return outputs

@@ -28,6 +28,14 @@ from workshop.nanovllm_moe.artifacts.modeling.layers.moe.combine_ep_ll import Co
 from workshop.nanovllm_moe.artifacts.modeling.layers.moe.dispatch_ep_ht import DispatchEPHT
 from workshop.nanovllm_moe.artifacts.modeling.layers.moe.experts_ep_ht import ExpertsEPHT
 from workshop.nanovllm_moe.artifacts.moe_backend import MoeBackend
+from workshop.nanovllm_moe.services.utils.parallel import (
+    get_dp_leader_global_rank,
+    get_dp_rank,
+    get_tp_group,
+    get_tp_rank,
+    is_dp_leader,
+    is_owner_local_ep_mode,
+)
 
 from enum import Enum
 
@@ -44,16 +52,17 @@ class ModelRunner(BaseService):
 
     def __init__(self, config: Config):
         super().__init__()
-        # In pure-EP mode (mp.spawn'd processes) every rank runs its own engine
-        # independently, so use the TP-group rank (which is always 0 for size-1 TP).
-        # That makes the "rank 0 only" branches in this file (sampling, etc.) fire
-        # on every process — correct, because every process needs the next token.
-        from workshop.nanovllm_moe.services.utils.parallel import get_tp_rank
-        self.rank = get_tp_rank()
+        self.tp_rank = get_tp_rank()
+        self.dp_rank = get_dp_rank()
+        self.dp_leader = is_dp_leader()
+        self.global_rank = dist.get_rank() if dist.is_initialized() else 0
+        # Keep `rank` as the TP rank for existing TP-sharded layer assumptions.
+        self.rank = self.tp_rank
         self.config = config
         self.block_size = config.kvcache_block_size
         self.enforce_eager = config.enforce_eager
         self.world_size = config.tensor_parallel_size
+        self.runtime_mode = config.moe_runtime_mode
         
         torch.set_default_dtype(self.config.hf_config.torch_dtype)
         
@@ -87,6 +96,17 @@ class ModelRunner(BaseService):
                 moe_mode=moe_mode,
                 m_max=m_max,
                 ep_ll_dispatch_kernel=ep_ll_dispatch_kernel,
+                expert_placement=config.moe_expert_placement,
+                expert_placement_seed=config.moe_expert_placement_seed,
+                expert_placement_path=config.moe_expert_placement_path,
+                expert_overlap_enabled=config.moe_expert_overlap_enabled,
+                expert_overlap_path=config.moe_expert_overlap_path,
+                expert_overlap_strategy=config.moe_expert_overlap_strategy,
+                ep_ll_overflow_policy=config.moe_ll_overflow_policy,
+                drop_policy=config.moe_drop_policy,
+                drop_rate=config.moe_drop_rate,
+                drop_seed=config.moe_drop_seed,
+                router_keff=config.moe_router_keff,
             ))
         else:
             self.model = orch.add(Qwen3ForCausalLM(config.hf_config))
@@ -179,6 +199,22 @@ class ModelRunner(BaseService):
         self._mem_print("[MEM] after  capture_cudagraph")
         print("after capturing cuda graph")
 
+    def _is_vllm_dp_ep(self) -> bool:
+        return self.runtime_mode == "vllm_dp_ep" and dist.is_initialized() and dist.get_world_size() > 1
+
+    def _is_owner_local_ep(self) -> bool:
+        return is_owner_local_ep_mode() and dist.is_initialized() and dist.get_world_size() > 1
+
+    def _tp_leader_src(self) -> int:
+        return get_dp_leader_global_rank(self.dp_rank)
+
+    def _broadcast_tp_object(self, payload):
+        if not self._is_vllm_dp_ep():
+            return payload
+        obj_list = [payload if self.dp_leader else None]
+        dist.broadcast_object_list(obj_list, src=self._tp_leader_src(), group=get_tp_group())
+        return obj_list[0]
+
     def _mem_print(self, tag: str) -> None:
         """One-line GPU memory snapshot for this rank.
 
@@ -260,7 +296,21 @@ class ModelRunner(BaseService):
                 layer_id += 1
 
     def prepare_block_tables(self, seqs: list[Sequence]):
+        max_num_blocks = (self.config.max_model_len + self.block_size - 1) // self.block_size
         max_len = max(len(seq.block_table) for seq in seqs)
+        if max_len > max_num_blocks:
+            raise RuntimeError(
+                f"block table length {max_len} exceeds max_model_len capacity "
+                f"{max_num_blocks}; sequence length likely exceeded max_model_len="
+                f"{self.config.max_model_len}"
+            )
+        for seq in seqs:
+            for block_id in seq.block_table:
+                if block_id < 0 or block_id >= self.config.num_kvcache_blocks:
+                    raise RuntimeError(
+                        f"KV block id {block_id} outside allocated range "
+                        f"[0, {self.config.num_kvcache_blocks})"
+                    )
         block_tables = [
             seq.block_table + [-1] * (max_len - len(seq.block_table)) for seq in seqs
         ]
@@ -270,6 +320,32 @@ class ModelRunner(BaseService):
         return block_tables
 
     def prepare_prefill(self, seqs: list[Sequence]):
+        if self._is_vllm_dp_ep() and not self.dp_leader:
+            payload = self._broadcast_tp_object(None)
+            input_ids = torch.tensor(payload["input_ids"], dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+            positions = torch.tensor(payload["positions"], dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+            cu_seqlens_q = torch.tensor(payload["cu_seqlens_q"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            cu_seqlens_k = torch.tensor(payload["cu_seqlens_k"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            slot_mapping = torch.tensor(payload["slot_mapping"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            block_tables = None
+            if payload["block_tables"] is not None:
+                block_tables = torch.tensor(payload["block_tables"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            set_context(
+                True,
+                cu_seqlens_q,
+                cu_seqlens_k,
+                payload["max_seqlen_q"],
+                payload["max_seqlen_k"],
+                slot_mapping,
+                None,
+                block_tables,
+                num_tokens=int(input_ids.size(0)),
+            )
+            self.prepare_metadata_for_attn_prefill(seqs)
+            if hasattr(self, "prepare_metadata_for_moe"):
+                self.prepare_metadata_for_moe(int(input_ids.size(0)))
+            return input_ids, positions
+
         input_ids = []
         positions = []
         cu_seqlens_q = [0]
@@ -280,6 +356,10 @@ class ModelRunner(BaseService):
         block_tables = None
         for seq in seqs:
             seqlen = len(seq)
+            if seqlen > self.config.max_model_len:
+                raise RuntimeError(
+                    f"sequence length {seqlen} exceeds max_model_len={self.config.max_model_len}"
+                )
             input_ids.extend(seq[seq.num_cached_tokens :])
             positions.extend(list(range(seq.num_cached_tokens, seqlen)))
             seqlen_q = seqlen - seq.num_cached_tokens
@@ -297,7 +377,19 @@ class ModelRunner(BaseService):
                 else:
                     end = start + seq.last_block_num_tokens
                 slot_mapping.extend(list(range(start, end)))
-        if cu_seqlens_k[-1] > cu_seqlens_q[-1]:  # prefix cache
+        cache_slots = self.config.num_kvcache_blocks * self.block_size
+        if len(input_ids) > self.config.max_num_batched_tokens:
+            raise RuntimeError(
+                f"prefill batch has {len(input_ids)} tokens, exceeding "
+                f"max_num_batched_tokens={self.config.max_num_batched_tokens}"
+            )
+        bad_slot = next((slot for slot in slot_mapping if slot < 0 or slot >= cache_slots), None)
+        if bad_slot is not None:
+            raise RuntimeError(
+                f"prefill slot_mapping contains {bad_slot}, outside KV cache slots "
+                f"[0, {cache_slots})"
+            )
+        if seqs and cu_seqlens_k[-1] > cu_seqlens_q[-1]:  # prefix cache
             block_tables = self.prepare_block_tables(seqs)
         input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(
             non_blocking=True
@@ -331,19 +423,90 @@ class ModelRunner(BaseService):
         if hasattr(self, "prepare_metadata_for_moe"):
             self.prepare_metadata_for_moe(int(input_ids.size(0)))
 
+        if self._is_vllm_dp_ep():
+            self._broadcast_tp_object(
+                {
+                    "input_ids": input_ids.cpu().tolist(),
+                    "positions": positions.cpu().tolist(),
+                    "cu_seqlens_q": cu_seqlens_q.cpu().tolist(),
+                    "cu_seqlens_k": cu_seqlens_k.cpu().tolist(),
+                    "max_seqlen_q": max_seqlen_q,
+                    "max_seqlen_k": max_seqlen_k,
+                    "slot_mapping": slot_mapping.cpu().tolist(),
+                    "block_tables": block_tables.cpu().tolist() if block_tables is not None else None,
+                }
+            )
+
         return input_ids, positions
 
     def prepare_decode(self, seqs: list[Sequence]):
+        if self._is_vllm_dp_ep() and not self.dp_leader:
+            payload = self._broadcast_tp_object(None)
+            input_ids = torch.tensor(payload["input_ids"], dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+            positions = torch.tensor(payload["positions"], dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+            slot_mapping = torch.tensor(payload["slot_mapping"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            context_lens = torch.tensor(payload["context_lens"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            block_tables = torch.tensor(payload["block_tables"], dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+            set_context(
+                False,
+                slot_mapping=slot_mapping,
+                context_lens=context_lens,
+                block_tables=block_tables,
+                num_tokens=int(input_ids.size(0)),
+            )
+            if hasattr(self, "prepare_metadata_for_moe"):
+                self.prepare_metadata_for_moe(int(input_ids.size(0)))
+            if not self.enforce_eager and self.stage != RunningStage.WARMUP:
+                bs = len(seqs)
+                page_counts = torch.tensor(
+                    [0] + [len(seq.block_table) for seq in seqs],
+                    device="cuda",
+                    dtype=torch.int32,
+                )
+                cu_page_indices = torch.tensor(
+                    list(itertools.chain(*[seq.block_table for seq in seqs])),
+                    device="cuda",
+                    dtype=torch.int32,
+                )
+                kv_last_page_lens = torch.tensor(
+                    [seq.last_block_num_tokens for seq in seqs],
+                    device="cuda",
+                    dtype=torch.int32,
+                ).to(torch.int32)
+                self.init_forward_metadata_replay_cuda_graph(
+                    bs,
+                    page_counts,
+                    cu_page_indices,
+                    kv_last_page_lens,
+                )
+            else:
+                self.prepare_metadata_for_attn_decode(seqs)
+            return input_ids, positions
+
         input_ids = []
         positions = []
         slot_mapping = []
         context_lens = []
         for seq in seqs:
+            if len(seq) > self.config.max_model_len:
+                raise RuntimeError(
+                    f"sequence length {len(seq)} exceeds max_model_len="
+                    f"{self.config.max_model_len}"
+                )
+            if not seq.block_table:
+                raise RuntimeError("decode sequence has no allocated KV blocks")
             input_ids.append(seq.last_token)
             positions.append(len(seq))
             context_lens.append(len(seq))
             slot_mapping.append(
                 seq.block_table[-1] * self.block_size + seq.last_block_num_tokens - 1
+            )
+        cache_slots = self.config.num_kvcache_blocks * self.block_size
+        bad_slot = next((slot for slot in slot_mapping if slot < 0 or slot >= cache_slots), None)
+        if bad_slot is not None:
+            raise RuntimeError(
+                f"decode slot_mapping contains {bad_slot}, outside KV cache slots "
+                f"[0, {cache_slots})"
             )
         input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(
             non_blocking=True
@@ -357,7 +520,7 @@ class ModelRunner(BaseService):
         context_lens = torch.tensor(
             context_lens, dtype=torch.int32, pin_memory=True
         ).cuda(non_blocking=True)
-        block_tables = self.prepare_block_tables(seqs)
+        block_tables = self.prepare_block_tables(seqs) if seqs else torch.empty((0, 0), dtype=torch.int32, device="cuda")
         set_context(
             False,
             slot_mapping=slot_mapping,
@@ -369,19 +532,40 @@ class ModelRunner(BaseService):
         if hasattr(self, "prepare_metadata_for_moe"):
             self.prepare_metadata_for_moe(int(input_ids.size(0)))
 
+        if self._is_vllm_dp_ep():
+            self._broadcast_tp_object(
+                {
+                    "input_ids": input_ids.cpu().tolist(),
+                    "positions": positions.cpu().tolist(),
+                    "slot_mapping": slot_mapping.cpu().tolist(),
+                    "context_lens": context_lens.cpu().tolist(),
+                    "block_tables": block_tables.cpu().tolist(),
+                }
+            )
+
         if not self.enforce_eager and self.stage != RunningStage.WARMUP:
             # cuda_graph enabled
             bs = len(seqs)
-            seq_lens = torch.tensor(
-                [0] + [len(seq.block_table) for seq in seqs], device="cuda"
+            page_counts = torch.tensor(
+                [0] + [len(seq.block_table) for seq in seqs],
+                device="cuda",
+                dtype=torch.int32,
             )
             cu_page_indices = torch.tensor(
-                list(itertools.chain(*[seq.block_table for seq in seqs])), device="cuda"
+                list(itertools.chain(*[seq.block_table for seq in seqs])),
+                device="cuda",
+                dtype=torch.int32,
+            )
+            kv_last_page_lens = torch.tensor(
+                [seq.last_block_num_tokens for seq in seqs],
+                device="cuda",
+                dtype=torch.int32,
             ).to(torch.int32)
             self.init_forward_metadata_replay_cuda_graph(
                 bs,
-                seq_lens,
+                page_counts,
                 cu_page_indices,
+                kv_last_page_lens,
             )
         else:
             self.prepare_metadata_for_attn_decode(seqs)
@@ -422,30 +606,32 @@ class ModelRunner(BaseService):
 
     @torch.inference_mode()
     def run(self, seqs: list[Sequence], is_prefill: bool) -> list[int]:
-        from workshop.nanovllm_moe.services.utils.parallel import (
-            get_tp_group, get_tp_world_size,
-        )
-        import torch.distributed as dist
-
         input_ids, positions = (
             self.prepare_prefill(seqs) if is_prefill else self.prepare_decode(seqs)
         )
-        temperatures = self.prepare_sample(seqs) if self.rank == 0 else None
+        temperatures = self.prepare_sample(seqs) if (
+            self.dp_leader if self._is_vllm_dp_ep()
+            else True if self._is_owner_local_ep()
+            else self.global_rank == 0
+        ) else None
 
         logits = self.run_model(input_ids, positions, is_prefill)
-        token_ids = (
-            self.sampler(logits, temperatures).tolist() if self.rank == 0 else None
-        )
-
-        # TP × EP: only tp_rank==0 samples; broadcast within TP subgroup so every
-        # TP rank has the same tokens to update its sequence state. Pure EP (Tp=1)
-        # is a no-op since every rank has tp_rank==0 and sampled independently.
-        if get_tp_world_size() > 1:
+        if self._is_vllm_dp_ep():
+            token_ids = self.sampler(logits, temperatures).tolist() if self.dp_leader else None
             obj_list = [token_ids]
-            tp_grp = get_tp_group()
-            src_global = dist.get_global_rank(tp_grp, 0)
-            dist.broadcast_object_list(obj_list, src=src_global, group=tp_grp)
+            dist.broadcast_object_list(obj_list, src=self._tp_leader_src(), group=get_tp_group())
             token_ids = obj_list[0]
+        elif self._is_owner_local_ep():
+            token_ids = self.sampler(logits, temperatures).tolist()
+        else:
+            token_ids = (
+                self.sampler(logits, temperatures).tolist()
+                if self.global_rank == 0 else None
+            )
+            if dist.is_initialized() and dist.get_world_size() > 1:
+                obj_list = [token_ids]
+                dist.broadcast_object_list(obj_list, src=0)
+                token_ids = obj_list[0]
 
         reset_context()
         return token_ids
@@ -467,9 +653,12 @@ class ModelRunner(BaseService):
         cu_page_indices = torch.tensor(
             list(itertools.chain(*[seq.block_table for seq in seqs])), device="cuda"
         ).to(torch.int32)
-        seq_lens = torch.tensor(
-            [0] + [len(seq.block_table) for seq in seqs], device="cuda"
+        page_counts = torch.tensor(
+            [0] + [len(seq.block_table) for seq in seqs],
+            device="cuda",
+            dtype=torch.int32,
         )
+        kv_last_page_lens = torch.ones(max_bs, dtype=torch.int32, device="cuda")
 
         outputs = torch.zeros(max_bs, hf_config.hidden_size)
         # Capture sizes 1..min(max_bs, 8). max_bs comes from max_num_seqs and may be
@@ -486,7 +675,7 @@ class ModelRunner(BaseService):
                 num_tokens=bs,
             )
             self.init_forward_metadata_capture_cuda_graph(
-                bs, seq_lens[: bs + 1], cu_page_indices
+                bs, page_counts[: bs + 1], cu_page_indices, kv_last_page_lens[:bs]
             )
             # MoE: prepare moe metadata BEFORE warmup AND capture; dispatch will refill
             # num_tokens_post_padded inside the captured region, so the captured launches

@@ -1,0 +1,280 @@
+{
+  "run_id": "retry_p1_t32_ws4_epht_round_robin_20260516_1412",
+  "args": {
+    "python": "/home/lzy/miniconda3/envs/vllm/bin/python",
+    "cuda_home": "/usr/local/cuda-12.8",
+    "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+    "dataset_path": "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+    "gpu_ids": "0,1,2,3",
+    "gpus_per_job": 4,
+    "parallel_jobs": 1,
+    "world_size": 4,
+    "world_sizes": null,
+    "tp_size": 1,
+    "impls": "ep_ht",
+    "placements": "round_robin",
+    "seed": 1234,
+    "num_layers": -1,
+    "num_problems": 1,
+    "max_tokens": 32,
+    "scale_steps": null,
+    "max_model_len": 512,
+    "max_num_batched_tokens": 1024,
+    "max_num_seqs": 4,
+    "gpu_memory_utilization": 0.85,
+    "enforce_eager": 1,
+    "moe_ll_overflow_policy": "drop",
+    "moe_ll_m_max": -1,
+    "base_master_port": 31000,
+    "timeout_s": 5400,
+    "run_id": "retry_p1_t32_ws4_epht_round_robin_20260516_1412",
+    "dry_run": false,
+    "skip_profile": "eval_results/moe_routing_profile_perf_ws8_ws4_20260516_0228_p1_t32_ws4_profile.json"
+  },
+  "gpu_groups": [
+    "0,1,2,3"
+  ],
+  "profile": null,
+  "placement_generation": [],
+  "eval_results": [
+    {
+      "name": "ep_ht_round_robin_ws4_tp1",
+      "cmd": [
+        "/home/lzy/miniconda3/envs/vllm/bin/python",
+        "-m",
+        "eval.test_bazaar_moe",
+        "--model-path",
+        "/home/lzy/models/Qwen3-30B-A3B",
+        "--dataset-path",
+        "/home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet",
+        "--world-size",
+        "4",
+        "--tp-size",
+        "1",
+        "--master-port",
+        "31001",
+        "--moe-impl",
+        "ep_ht",
+        "--moe-expert-placement",
+        "round_robin",
+        "--moe-expert-placement-seed",
+        "1234",
+        "--num-layers",
+        "-1",
+        "--num-problems",
+        "1",
+        "--max-tokens",
+        "32",
+        "--max-model-len",
+        "512",
+        "--max-num-batched-tokens",
+        "1024",
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enforce-eager",
+        "1",
+        "--moe-ll-overflow-policy",
+        "drop",
+        "--moe-profile-routing",
+        "0"
+      ],
+      "log_path": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_retry_p1_t32_ws4_epht_round_robin_20260516_1412/logs/ep_ht_round_robin_ws4_tp1.log",
+      "timeout_s": 5400,
+      "output_prefix": "aime24_ep_ht_round_robin_tp1_ep4_eager1",
+      "impl": "ep_ht",
+      "placement": "round_robin",
+      "world_size": 4,
+      "tp_size": 1,
+      "gpu_group": "0,1,2,3",
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+        "MOE_PROFILE_RUN_ID": "retry_p1_t32_ws4_epht_round_robin_20260516_1412_ep_ht_round_robin",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_HOME": "/usr/local/cuda-12.8",
+        "FLASHINFER_NVCC": "/usr/local/cuda-12.8/bin/nvcc",
+        "FLASHINFER_WORKSPACE_BASE": "/home/lzy/Artifact-Infer/eval_results/moe_placement_run_retry_p1_t32_ws4_epht_round_robin_20260516_1412/flashinfer_workspace"
+      },
+      "command": "/home/lzy/miniconda3/envs/vllm/bin/python -m eval.test_bazaar_moe --model-path /home/lzy/models/Qwen3-30B-A3B --dataset-path /home/lzy/Artifact-Infer/datasets/gsm8k_moe_smoke.parquet --world-size 4 --tp-size 1 --master-port 31001 --moe-impl ep_ht --moe-expert-placement round_robin --moe-expert-placement-seed 1234 --num-layers -1 --num-problems 1 --max-tokens 32 --max-model-len 512 --max-num-batched-tokens 1024 --max-num-seqs 4 --gpu-memory-utilization 0.85 --enforce-eager 1 --moe-ll-overflow-policy drop --moe-profile-routing 0",
+      "exit_code": 0,
+      "pass": true,
+      "timed_out": false,
+      "elapsed_s": 107.50056266784668,
+      "result_json_path": "eval_results/aime24_ep_ht_round_robin_tp1_ep4_eager1.json",
+      "metrics": {
+        "prefill_tokens": 74,
+        "prefill_time_s": 46.33810882177204,
+        "decode_tokens": 31,
+        "decode_time_s": 19.75921013718471,
+        "steps": [
+          {
+            "is_prefill": true,
+            "tokens": 74,
+            "time_s": 46.33810882177204
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 14.53211022540927
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.24519451800733805
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2347976928576827
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2286033290438354
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22493307618424296
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2287243320606649
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22560247592628002
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22589202784001827
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.22688023280352354
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.2134091341868043
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15350141609087586
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15062475996091962
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1503609619103372
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15062606101855636
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15047980286180973
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15299468720331788
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15436116186901927
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15017426712438464
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15055006789043546
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1506846947595477
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15345883509144187
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15053875418379903
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15039607137441635
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15057299379259348
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15036782575771213
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1509148720651865
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1503208070062101
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15054139494895935
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15048142289742827
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.1504558608867228
+          },
+          {
+            "is_prefill": false,
+            "tokens": 1,
+            "time_s": 0.15065637417137623
+          }
+        ],
+        "e2e_total_time_s": 66.10955668939278,
+        "prefill_throughput_tok_s": 1.5969577067683647,
+        "decode_throughput_tok_s": 1.5688886238251667
+      },
+      "total_generated_tokens": 32,
+      "rollout_txt_path": "eval_results/aime24_ep_ht_round_robin_tp1_ep4_eager1.txt"
+    }
+  ]
+}

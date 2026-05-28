@@ -1,0 +1,8 @@
+# MoE Placement Experiment Run
+
+| impl | placement | gpus | pass | exit | e2e_s | prefill_tok_s | decode_tok_s | log | output | notes |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| ep_ll_triton | contiguous | 0,1,2,3,4,5,6,7 | True | 0 | 241.38112719822675 | 19.085121035786095 | 1.0962601008745114 | `/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1516_p4_t64_ws8/logs/ep_ll_triton_contiguous_ws8_tp1.log` | `eval_results/aime24_ep_ll_triton_contiguous_tp1_ep8_eager1.json` |  |
+| ep_ll_triton | round_robin | 0,1,2,3,4,5,6,7 | True | 0 | 240.22409647330642 | 16.227249895053358 | 1.1116609125806862 | `/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1516_p4_t64_ws8/logs/ep_ll_triton_round_robin_ws8_tp1.log` | `eval_results/aime24_ep_ll_triton_round_robin_tp1_ep8_eager1.json` |  |
+| ep_ll_triton | fixed_random_shuffle | 0,1,2,3,4,5,6,7 | True | 0 | 232.3694998291321 | 21.545184062857164 | 1.1342753696684946 | `/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1516_p4_t64_ws8/logs/ep_ll_triton_fixed_random_shuffle_ws8_tp1.log` | `eval_results/aime24_ep_ll_triton_fixed_random_shuffle_tp1_ep8_eager1.json` |  |
+| ep_ll_triton | load_balanced_greedy_with_locality_tiebreak | 0,1,2,3,4,5,6,7 | True | 0 | 238.51715558720753 | 18.18857239036961 | 1.1129022098538637 | `/home/lzy/Artifact-Infer/eval_results/moe_placement_run_perf_ws8_ws4_rerun_20260516_1516_p4_t64_ws8/logs/ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_ws8_tp1.log` | `eval_results/aime24_ep_ll_triton_load_balanced_greedy_with_locality_tiebreak_tp1_ep8_eager1.json` |  |

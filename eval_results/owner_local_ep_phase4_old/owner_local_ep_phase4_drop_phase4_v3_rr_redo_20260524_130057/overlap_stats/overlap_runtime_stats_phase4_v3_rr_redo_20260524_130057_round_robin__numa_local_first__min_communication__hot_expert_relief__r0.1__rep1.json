@@ -1,0 +1,1911 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "moe_impl": "ep_ht",
+  "runtime_mode": "owner_local_ep",
+  "world_size": 8,
+  "tp_size": 1,
+  "dp_size": 8,
+  "ep_size": 8,
+  "source_definition": "owner_rank",
+  "max_model_len": 512,
+  "max_tokens": 192,
+  "num_prompts": 256,
+  "placement_used_during_profiling": "round_robin",
+  "placement_json_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase2_owner_local_ep_256_20260520_021156/placements/moe_placement_round_robin_20260520_022258.json",
+  "overlap": 0.25,
+  "overlap_plan_json_path": "/home/lzy/Artifact-Infer/eval_results/owner_local_ep_phase3_overlap_phase3_joint_align_phase2_ov025_merged_numa_fixed_20260522/overlap_plans/moe_overlap_plan_round_robin__numa_local_first__ov0p25_min_communication_20260522_170527.json",
+  "overlap_strategy": "min_communication",
+  "created_at": "2026-05-24 14:19:22",
+  "profile_run_id": "phase4_v3_rr_redo_20260524_130057_round_robin__numa_local_first__min_communication__hot_expert_relief__r0.1__rep1",
+  "num_layers": 48,
+  "total_routed_replicas": 14628484,
+  "local_hit_ratio": 0.26922960711444877,
+  "cross_traffic_ratio": 0.7307703928855512,
+  "cross_numa_ratio": 0.3701696635140046,
+  "per_rank_compute_load": [
+    3160902,
+    3164076,
+    2966991,
+    3337577,
+    493755,
+    511781,
+    490085,
+    503317
+  ],
+  "per_src_outgoing": [
+    1592947,
+    1862666,
+    1902396,
+    1856516,
+    1807033,
+    1872289,
+    1836250,
+    1898387
+  ],
+  "per_dst_incoming": [
+    3160902,
+    3164076,
+    2966991,
+    3337577,
+    493755,
+    511781,
+    490085,
+    503317
+  ],
+  "gpu_cv": 0.728480325387149,
+  "send_matrix": [
+    [
+      428778,
+      389309,
+      364625,
+      410235,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      454660,
+      501339,
+      425295,
+      481372,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      464367,
+      466926,
+      479881,
+      491222,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      450322,
+      447356,
+      429353,
+      529485,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      344691,
+      387700,
+      300991,
+      279896,
+      493755,
+      0,
+      0,
+      0
+    ],
+    [
+      420904,
+      248697,
+      352675,
+      338232,
+      0,
+      511781,
+      0,
+      0
+    ],
+    [
+      306429,
+      373355,
+      245495,
+      420886,
+      0,
+      0,
+      490085,
+      0
+    ],
+    [
+      290751,
+      349394,
+      368676,
+      386249,
+      0,
+      0,
+      0,
+      503317
+    ]
+  ],
+  "per_layer": [
+    {
+      "layer_id": 0,
+      "per_src_outgoing": [
+        33628,
+        38999,
+        39719,
+        38545,
+        37862,
+        39299,
+        38275,
+        39959
+      ],
+      "per_dst_incoming": [
+        73690,
+        66135,
+        60703,
+        64124,
+        9887,
+        11471,
+        9358,
+        10918
+      ],
+      "local_hit_ratio": 0.26567978947780835,
+      "cross_traffic_ratio": 0.7343202105221917,
+      "cross_numa_ratio": 0.3714208288984805,
+      "gpu_cv": 0.7335848582781306
+    },
+    {
+      "layer_id": 1,
+      "per_src_outgoing": [
+        33183,
+        39085,
+        40301,
+        38456,
+        37674,
+        39139,
+        38570,
+        39945
+      ],
+      "per_dst_incoming": [
+        61815,
+        64914,
+        76593,
+        61250,
+        9231,
+        10459,
+        11060,
+        11031
+      ],
+      "local_hit_ratio": 0.2680078210430451,
+      "cross_traffic_ratio": 0.7319921789569549,
+      "cross_numa_ratio": 0.3706410578646202,
+      "gpu_cv": 0.736297748448037
+    },
+    {
+      "layer_id": 2,
+      "per_src_outgoing": [
+        33487,
+        39083,
+        39589,
+        38183,
+        37526,
+        39495,
+        37872,
+        39591
+      ],
+      "per_dst_incoming": [
+        80352,
+        64960,
+        64189,
+        54314,
+        9721,
+        13708,
+        6994,
+        10588
+      ],
+      "local_hit_ratio": 0.2648986634998327,
+      "cross_traffic_ratio": 0.7351013365001673,
+      "cross_numa_ratio": 0.37225499137212703,
+      "gpu_cv": 0.7523892176370106
+    },
+    {
+      "layer_id": 3,
+      "per_src_outgoing": [
+        33321,
+        39522,
+        39377,
+        38058,
+        37707,
+        39071,
+        37688,
+        40125
+      ],
+      "per_dst_incoming": [
+        69195,
+        83675,
+        61860,
+        48549,
+        10843,
+        11568,
+        6755,
+        12424
+      ],
+      "local_hit_ratio": 0.26806595619757995,
+      "cross_traffic_ratio": 0.7319340438024201,
+      "cross_numa_ratio": 0.37065428101906067,
+      "gpu_cv": 0.7654010192819114
+    },
+    {
+      "layer_id": 4,
+      "per_src_outgoing": [
+        33446,
+        39282,
+        39221,
+        38342,
+        37334,
+        39707,
+        37893,
+        39711
+      ],
+      "per_dst_incoming": [
+        78746,
+        74963,
+        51776,
+        57854,
+        8679,
+        13691,
+        7331,
+        11896
+      ],
+      "local_hit_ratio": 0.26659036650313506,
+      "cross_traffic_ratio": 0.7334096334968649,
+      "cross_numa_ratio": 0.370726972217121,
+      "gpu_cv": 0.7582670417938001
+    },
+    {
+      "layer_id": 5,
+      "per_src_outgoing": [
+        33186,
+        38465,
+        39738,
+        38974,
+        37973,
+        39032,
+        38282,
+        39201
+      ],
+      "per_dst_incoming": [
+        68387,
+        63209,
+        65306,
+        66447,
+        11327,
+        11379,
+        9930,
+        8866
+      ],
+      "local_hit_ratio": 0.2692102043293281,
+      "cross_traffic_ratio": 0.7307897956706719,
+      "cross_numa_ratio": 0.37062696202407075,
+      "gpu_cv": 0.7288132737684757
+    },
+    {
+      "layer_id": 6,
+      "per_src_outgoing": [
+        33700,
+        38739,
+        39005,
+        38758,
+        38581,
+        38671,
+        37726,
+        39371
+      ],
+      "per_dst_incoming": [
+        81845,
+        81595,
+        29940,
+        69579,
+        14199,
+        9475,
+        8297,
+        9621
+      ],
+      "local_hit_ratio": 0.2673969220261959,
+      "cross_traffic_ratio": 0.7326030779738041,
+      "cross_numa_ratio": 0.370240123985802,
+      "gpu_cv": 0.8282220650948304
+    },
+    {
+      "layer_id": 7,
+      "per_src_outgoing": [
+        32979,
+        38569,
+        39708,
+        38710,
+        37125,
+        38782,
+        38282,
+        39817
+      ],
+      "per_dst_incoming": [
+        78819,
+        57340,
+        64826,
+        61409,
+        8223,
+        11397,
+        11049,
+        10909
+      ],
+      "local_hit_ratio": 0.26822207308567897,
+      "cross_traffic_ratio": 0.7317779269143211,
+      "cross_numa_ratio": 0.3698630136986301,
+      "gpu_cv": 0.7422080254550907
+    },
+    {
+      "layer_id": 8,
+      "per_src_outgoing": [
+        33034,
+        39538,
+        39731,
+        38048,
+        36844,
+        39148,
+        38377,
+        40093
+      ],
+      "per_dst_incoming": [
+        55824,
+        83350,
+        65735,
+        57722,
+        6598,
+        10865,
+        11630,
+        13089
+      ],
+      "local_hit_ratio": 0.27168132592769995,
+      "cross_traffic_ratio": 0.7283186740723001,
+      "cross_numa_ratio": 0.36835699264795135,
+      "gpu_cv": 0.752175205807133
+    },
+    {
+      "layer_id": 9,
+      "per_src_outgoing": [
+        32877,
+        38673,
+        39526,
+        39254,
+        38164,
+        38838,
+        37953,
+        39339
+      ],
+      "per_dst_incoming": [
+        57130,
+        74821,
+        55150,
+        76217,
+        12953,
+        9847,
+        9272,
+        9234
+      ],
+      "local_hit_ratio": 0.27038906980408633,
+      "cross_traffic_ratio": 0.7296109301959136,
+      "cross_numa_ratio": 0.37090971164451914,
+      "gpu_cv": 0.7513997252372437
+    },
+    {
+      "layer_id": 10,
+      "per_src_outgoing": [
+        33424,
+        38362,
+        39362,
+        39111,
+        37757,
+        38600,
+        38812,
+        39288
+      ],
+      "per_dst_incoming": [
+        69705,
+        54905,
+        59282,
+        79290,
+        10791,
+        8267,
+        13804,
+        8672
+      ],
+      "local_hit_ratio": 0.26895863689468225,
+      "cross_traffic_ratio": 0.7310413631053178,
+      "cross_numa_ratio": 0.37058441302721223,
+      "gpu_cv": 0.7494267398752421
+    },
+    {
+      "layer_id": 11,
+      "per_src_outgoing": [
+        33277,
+        38746,
+        39255,
+        39020,
+        37126,
+        39894,
+        38208,
+        39148
+      ],
+      "per_dst_incoming": [
+        75572,
+        64550,
+        52381,
+        70493,
+        6991,
+        14142,
+        11080,
+        9465
+      ],
+      "local_hit_ratio": 0.26873641991111813,
+      "cross_traffic_ratio": 0.7312635800888819,
+      "cross_numa_ratio": 0.3698970046672837,
+      "gpu_cv": 0.7455026425258969
+    },
+    {
+      "layer_id": 12,
+      "per_src_outgoing": [
+        33208,
+        38890,
+        39188,
+        38981,
+        38219,
+        38572,
+        38122,
+        39432
+      ],
+      "per_dst_incoming": [
+        70665,
+        66773,
+        48007,
+        77350,
+        13444,
+        8434,
+        9258,
+        10681
+      ],
+      "local_hit_ratio": 0.2694279936443738,
+      "cross_traffic_ratio": 0.7305720063556261,
+      "cross_numa_ratio": 0.3694142056123856,
+      "gpu_cv": 0.7539435697802455
+    },
+    {
+      "layer_id": 13,
+      "per_src_outgoing": [
+        33477,
+        38435,
+        39996,
+        38497,
+        37767,
+        38773,
+        38084,
+        39939
+      ],
+      "per_dst_incoming": [
+        66205,
+        56491,
+        72267,
+        68213,
+        10744,
+        8544,
+        9735,
+        12769
+      ],
+      "local_hit_ratio": 0.26949056950237404,
+      "cross_traffic_ratio": 0.730509430497626,
+      "cross_numa_ratio": 0.3697797801736576,
+      "gpu_cv": 0.7344115727012708
+    },
+    {
+      "layer_id": 14,
+      "per_src_outgoing": [
+        32849,
+        39535,
+        39538,
+        38361,
+        37723,
+        39359,
+        38061,
+        39240
+      ],
+      "per_dst_incoming": [
+        58696,
+        75173,
+        64672,
+        64596,
+        12063,
+        11286,
+        9019,
+        9161
+      ],
+      "local_hit_ratio": 0.26966908023868763,
+      "cross_traffic_ratio": 0.7303309197613124,
+      "cross_numa_ratio": 0.3704187536515397,
+      "gpu_cv": 0.7360980685128663
+    },
+    {
+      "layer_id": 15,
+      "per_src_outgoing": [
+        32626,
+        38904,
+        40261,
+        38518,
+        37389,
+        38820,
+        38978,
+        39285
+      ],
+      "per_dst_incoming": [
+        45799,
+        67373,
+        73570,
+        76300,
+        10292,
+        10470,
+        12068,
+        8909
+      ],
+      "local_hit_ratio": 0.27132924952670934,
+      "cross_traffic_ratio": 0.7286707504732907,
+      "cross_numa_ratio": 0.36988198083213847,
+      "gpu_cv": 0.7596181335972324
+    },
+    {
+      "layer_id": 16,
+      "per_src_outgoing": [
+        33628,
+        38520,
+        39793,
+        38105,
+        37305,
+        38696,
+        38594,
+        39778
+      ],
+      "per_dst_incoming": [
+        77427,
+        60683,
+        64502,
+        59777,
+        9463,
+        9315,
+        11123,
+        12129
+      ],
+      "local_hit_ratio": 0.269450986962049,
+      "cross_traffic_ratio": 0.730549013037951,
+      "cross_numa_ratio": 0.36904069719695554,
+      "gpu_cv": 0.7359716219767226
+    },
+    {
+      "layer_id": 17,
+      "per_src_outgoing": [
+        33057,
+        38739,
+        39635,
+        38882,
+        37298,
+        39441,
+        38127,
+        39515
+      ],
+      "per_dst_incoming": [
+        55852,
+        68037,
+        69432,
+        69727,
+        8305,
+        13795,
+        9201,
+        10345
+      ],
+      "local_hit_ratio": 0.27092755354552434,
+      "cross_traffic_ratio": 0.7290724464544757,
+      "cross_numa_ratio": 0.36999415807334574,
+      "gpu_cv": 0.7354734577246882
+    },
+    {
+      "layer_id": 18,
+      "per_src_outgoing": [
+        33754,
+        38817,
+        39075,
+        38574,
+        38308,
+        38574,
+        38021,
+        39592
+      ],
+      "per_dst_incoming": [
+        89143,
+        73200,
+        30944,
+        69677,
+        12072,
+        8831,
+        10012,
+        10836
+      ],
+      "local_hit_ratio": 0.26770260735441315,
+      "cross_traffic_ratio": 0.7322973926455869,
+      "cross_numa_ratio": 0.36999819503470455,
+      "gpu_cv": 0.8277366925918773
+    },
+    {
+      "layer_id": 19,
+      "per_src_outgoing": [
+        33062,
+        38645,
+        39870,
+        38619,
+        37217,
+        39006,
+        38382,
+        39805
+      ],
+      "per_dst_incoming": [
+        78926,
+        55065,
+        66205,
+        62489,
+        8435,
+        12215,
+        10896,
+        10375
+      ],
+      "local_hit_ratio": 0.2689014661562806,
+      "cross_traffic_ratio": 0.7310985338437195,
+      "cross_numa_ratio": 0.3692934479294564,
+      "gpu_cv": 0.7427296413020045
+    },
+    {
+      "layer_id": 20,
+      "per_src_outgoing": [
+        32918,
+        39229,
+        39349,
+        38700,
+        36819,
+        39247,
+        38337,
+        40156
+      ],
+      "per_dst_incoming": [
+        51032,
+        77747,
+        55607,
+        77867,
+        6857,
+        12140,
+        10693,
+        12812
+      ],
+      "local_hit_ratio": 0.27496841725320337,
+      "cross_traffic_ratio": 0.7250315827467966,
+      "cross_numa_ratio": 0.36769536184804186,
+      "gpu_cv": 0.7578483256870745
+    },
+    {
+      "layer_id": 21,
+      "per_src_outgoing": [
+        32830,
+        38487,
+        39777,
+        39288,
+        38281,
+        38948,
+        37915,
+        39295
+      ],
+      "per_dst_incoming": [
+        54538,
+        60441,
+        68465,
+        79636,
+        13004,
+        10568,
+        8883,
+        9286
+      ],
+      "local_hit_ratio": 0.27206130811197393,
+      "cross_traffic_ratio": 0.7279386918880261,
+      "cross_numa_ratio": 0.36971862174850156,
+      "gpu_cv": 0.7474215033186329
+    },
+    {
+      "layer_id": 22,
+      "per_src_outgoing": [
+        33302,
+        38280,
+        39336,
+        39310,
+        37684,
+        38529,
+        38670,
+        39534
+      ],
+      "per_dst_incoming": [
+        65190,
+        52781,
+        61503,
+        83557,
+        10525,
+        7932,
+        12819,
+        10338
+      ],
+      "local_hit_ratio": 0.26991416238572763,
+      "cross_traffic_ratio": 0.7300858376142724,
+      "cross_numa_ratio": 0.370276879646802,
+      "gpu_cv": 0.7567608290507322
+    },
+    {
+      "layer_id": 23,
+      "per_src_outgoing": [
+        33283,
+        38840,
+        39323,
+        38889,
+        37187,
+        39761,
+        38119,
+        39338
+      ],
+      "per_dst_incoming": [
+        70216,
+        66593,
+        56097,
+        70302,
+        7051,
+        13474,
+        10588,
+        10419
+      ],
+      "local_hit_ratio": 0.26944608518737284,
+      "cross_traffic_ratio": 0.7305539148126271,
+      "cross_numa_ratio": 0.37039115311413007,
+      "gpu_cv": 0.7365617657242071
+    },
+    {
+      "layer_id": 24,
+      "per_src_outgoing": [
+        33397,
+        38760,
+        39182,
+        38825,
+        38218,
+        38462,
+        38209,
+        39382
+      ],
+      "per_dst_incoming": [
+        79271,
+        60666,
+        46817,
+        76007,
+        13456,
+        7601,
+        9933,
+        10684
+      ],
+      "local_hit_ratio": 0.2682477376122982,
+      "cross_traffic_ratio": 0.7317522623877019,
+      "cross_numa_ratio": 0.3698556342076305,
+      "gpu_cv": 0.7661183691891649
+    },
+    {
+      "layer_id": 25,
+      "per_src_outgoing": [
+        33838,
+        38307,
+        39906,
+        38314,
+        37598,
+        38507,
+        37972,
+        40363
+      ],
+      "per_dst_incoming": [
+        75157,
+        52794,
+        68855,
+        66526,
+        9882,
+        7688,
+        9696,
+        14207
+      ],
+      "local_hit_ratio": 0.26817473466642605,
+      "cross_traffic_ratio": 0.731825265333574,
+      "cross_numa_ratio": 0.37062056068634047,
+      "gpu_cv": 0.7447803695368888
+    },
+    {
+      "layer_id": 26,
+      "per_src_outgoing": [
+        32907,
+        39050,
+        39850,
+        38203,
+        37711,
+        39294,
+        38018,
+        39237
+      ],
+      "per_dst_incoming": [
+        62331,
+        69159,
+        73148,
+        58273,
+        12384,
+        10971,
+        8966,
+        9038
+      ],
+      "local_hit_ratio": 0.2684096361783942,
+      "cross_traffic_ratio": 0.7315903638216058,
+      "cross_numa_ratio": 0.37105531271568015,
+      "gpu_cv": 0.7365265187013919
+    },
+    {
+      "layer_id": 27,
+      "per_src_outgoing": [
+        32678,
+        39020,
+        40102,
+        38574,
+        37497,
+        38827,
+        38792,
+        39279
+      ],
+      "per_dst_incoming": [
+        44670,
+        72109,
+        69900,
+        76509,
+        10590,
+        10821,
+        10863,
+        9307
+      ],
+      "local_hit_ratio": 0.2726819328737503,
+      "cross_traffic_ratio": 0.7273180671262497,
+      "cross_numa_ratio": 0.37016231965849544,
+      "gpu_cv": 0.7629333682688493
+    },
+    {
+      "layer_id": 28,
+      "per_src_outgoing": [
+        33724,
+        38734,
+        39650,
+        37936,
+        37355,
+        38663,
+        38591,
+        39780
+      ],
+      "per_dst_incoming": [
+        75695,
+        69213,
+        61691,
+        55770,
+        10791,
+        9204,
+        10751,
+        11318
+      ],
+      "local_hit_ratio": 0.27021709210236733,
+      "cross_traffic_ratio": 0.7297829078976327,
+      "cross_numa_ratio": 0.3689645997641517,
+      "gpu_cv": 0.7372095098119659
+    },
+    {
+      "layer_id": 29,
+      "per_src_outgoing": [
+        33055,
+        38860,
+        39559,
+        38826,
+        37176,
+        39731,
+        38007,
+        39441
+      ],
+      "per_dst_incoming": [
+        60021,
+        66443,
+        66226,
+        70498,
+        8144,
+        14335,
+        8965,
+        10023
+      ],
+      "local_hit_ratio": 0.26962958100146067,
+      "cross_traffic_ratio": 0.7303704189985394,
+      "cross_numa_ratio": 0.3705437297927163,
+      "gpu_cv": 0.7324307192340885
+    },
+    {
+      "layer_id": 30,
+      "per_src_outgoing": [
+        33760,
+        38655,
+        39202,
+        38581,
+        38226,
+        38573,
+        38065,
+        39518
+      ],
+      "per_dst_incoming": [
+        89143,
+        70058,
+        34988,
+        68746,
+        12084,
+        8367,
+        9780,
+        11414
+      ],
+      "local_hit_ratio": 0.26729266530960666,
+      "cross_traffic_ratio": 0.7327073346903933,
+      "cross_numa_ratio": 0.37013920808982864,
+      "gpu_cv": 0.8122533823632833
+    },
+    {
+      "layer_id": 31,
+      "per_src_outgoing": [
+        33039,
+        38302,
+        40170,
+        38777,
+        37291,
+        39089,
+        38472,
+        39572
+      ],
+      "per_dst_incoming": [
+        78117,
+        47607,
+        72642,
+        64422,
+        8805,
+        11997,
+        11623,
+        9499
+      ],
+      "local_hit_ratio": 0.269579143584762,
+      "cross_traffic_ratio": 0.730420856415238,
+      "cross_numa_ratio": 0.3692010816771246,
+      "gpu_cv": 0.7561712277534686
+    },
+    {
+      "layer_id": 32,
+      "per_src_outgoing": [
+        32930,
+        39162,
+        39756,
+        38630,
+        36758,
+        39384,
+        38398,
+        39902
+      ],
+      "per_dst_incoming": [
+        47412,
+        72036,
+        67542,
+        75282,
+        5764,
+        13162,
+        10979,
+        12743
+      ],
+      "local_hit_ratio": 0.2767676767676768,
+      "cross_traffic_ratio": 0.7232323232323232,
+      "cross_numa_ratio": 0.3666338711793257,
+      "gpu_cv": 0.7497907959010205
+    },
+    {
+      "layer_id": 33,
+      "per_src_outgoing": [
+        32737,
+        38632,
+        39633,
+        39336,
+        38225,
+        38943,
+        37951,
+        39208
+      ],
+      "per_dst_incoming": [
+        48221,
+        68730,
+        64167,
+        82081,
+        12696,
+        10414,
+        9028,
+        9328
+      ],
+      "local_hit_ratio": 0.27157697799222097,
+      "cross_traffic_ratio": 0.7284230220077791,
+      "cross_numa_ratio": 0.3704429455303366,
+      "gpu_cv": 0.7621332149633884
+    },
+    {
+      "layer_id": 34,
+      "per_src_outgoing": [
+        33227,
+        38260,
+        39368,
+        39319,
+        37816,
+        38690,
+        38514,
+        39407
+      ],
+      "per_dst_incoming": [
+        60350,
+        51863,
+        64922,
+        85642,
+        11144,
+        7932,
+        12029,
+        10719
+      ],
+      "local_hit_ratio": 0.269995830611193,
+      "cross_traffic_ratio": 0.730004169388807,
+      "cross_numa_ratio": 0.36967376994822737,
+      "gpu_cv": 0.7617817120694169
+    },
+    {
+      "layer_id": 35,
+      "per_src_outgoing": [
+        33170,
+        38774,
+        39314,
+        39065,
+        37215,
+        39824,
+        38108,
+        39169
+      ],
+      "per_dst_incoming": [
+        70736,
+        68549,
+        54838,
+        69042,
+        7240,
+        13423,
+        10835,
+        9976
+      ],
+      "local_hit_ratio": 0.2688427942581219,
+      "cross_traffic_ratio": 0.7311572057418781,
+      "cross_numa_ratio": 0.37041219279212445,
+      "gpu_cv": 0.7384228902936503
+    },
+    {
+      "layer_id": 36,
+      "per_src_outgoing": [
+        33216,
+        39004,
+        39291,
+        38775,
+        38375,
+        38482,
+        38376,
+        39175
+      ],
+      "per_dst_incoming": [
+        74500,
+        65250,
+        49987,
+        73265,
+        13649,
+        7646,
+        11088,
+        9309
+      ],
+      "local_hit_ratio": 0.2687712918534661,
+      "cross_traffic_ratio": 0.7312287081465338,
+      "cross_numa_ratio": 0.36993180042928314,
+      "gpu_cv": 0.7497773043540668
+    },
+    {
+      "layer_id": 37,
+      "per_src_outgoing": [
+        33788,
+        38458,
+        39902,
+        38436,
+        37556,
+        38673,
+        38013,
+        40325
+      ],
+      "per_dst_incoming": [
+        72617,
+        55122,
+        68920,
+        66902,
+        8953,
+        8790,
+        9654,
+        14193
+      ],
+      "local_hit_ratio": 0.26962389112275564,
+      "cross_traffic_ratio": 0.7303761088772444,
+      "cross_numa_ratio": 0.37023309771228013,
+      "gpu_cv": 0.7386089585149731
+    },
+    {
+      "layer_id": 38,
+      "per_src_outgoing": [
+        32748,
+        39263,
+        39655,
+        38434,
+        37923,
+        39119,
+        37809,
+        39420
+      ],
+      "per_dst_incoming": [
+        58108,
+        75542,
+        60958,
+        68620,
+        12727,
+        10585,
+        7996,
+        9835
+      ],
+      "local_hit_ratio": 0.2667829720965532,
+      "cross_traffic_ratio": 0.7332170279034468,
+      "cross_numa_ratio": 0.3716779850905638,
+      "gpu_cv": 0.7412161065712481
+    },
+    {
+      "layer_id": 39,
+      "per_src_outgoing": [
+        32676,
+        38817,
+        40324,
+        38554,
+        37500,
+        38980,
+        38927,
+        39051
+      ],
+      "per_dst_incoming": [
+        46175,
+        70489,
+        71063,
+        75647,
+        10283,
+        11915,
+        11903,
+        7354
+      ],
+      "local_hit_ratio": 0.2709814354933422,
+      "cross_traffic_ratio": 0.7290185645066578,
+      "cross_numa_ratio": 0.37070947974110074,
+      "gpu_cv": 0.7595893822871805
+    },
+    {
+      "layer_id": 40,
+      "per_src_outgoing": [
+        33512,
+        38664,
+        39685,
+        38327,
+        37238,
+        39090,
+        38513,
+        39588
+      ],
+      "per_dst_incoming": [
+        72274,
+        60105,
+        62843,
+        67566,
+        9076,
+        11792,
+        10511,
+        10450
+      ],
+      "local_hit_ratio": 0.270063719359064,
+      "cross_traffic_ratio": 0.729936280640936,
+      "cross_numa_ratio": 0.36964450441045643,
+      "gpu_cv": 0.7306872261130916
+    },
+    {
+      "layer_id": 41,
+      "per_src_outgoing": [
+        33151,
+        38841,
+        39525,
+        39078,
+        37660,
+        39359,
+        38083,
+        39489
+      ],
+      "per_dst_incoming": [
+        57893,
+        69825,
+        63919,
+        72049,
+        9114,
+        13115,
+        8858,
+        10413
+      ],
+      "local_hit_ratio": 0.26976991080849055,
+      "cross_traffic_ratio": 0.7302300891915094,
+      "cross_numa_ratio": 0.3705641805325277,
+      "gpu_cv": 0.7358181783481376
+    },
+    {
+      "layer_id": 42,
+      "per_src_outgoing": [
+        33005,
+        38501,
+        39551,
+        39254,
+        38100,
+        38611,
+        38268,
+        39363
+      ],
+      "per_dst_incoming": [
+        58775,
+        58811,
+        64960,
+        80712,
+        11806,
+        9604,
+        9952,
+        10033
+      ],
+      "local_hit_ratio": 0.26747479919777584,
+      "cross_traffic_ratio": 0.7325252008022242,
+      "cross_numa_ratio": 0.37073982530945043,
+      "gpu_cv": 0.7471881070084699
+    },
+    {
+      "layer_id": 43,
+      "per_src_outgoing": [
+        32957,
+        38784,
+        40383,
+        38048,
+        38073,
+        38677,
+        38538,
+        39126
+      ],
+      "per_dst_incoming": [
+        65836,
+        58644,
+        87836,
+        51098,
+        12167,
+        8606,
+        11976,
+        8423
+      ],
+      "local_hit_ratio": 0.2669426697221803,
+      "cross_traffic_ratio": 0.7330573302778197,
+      "cross_numa_ratio": 0.37178990498578396,
+      "gpu_cv": 0.773572381304475
+    },
+    {
+      "layer_id": 44,
+      "per_src_outgoing": [
+        33020,
+        39154,
+        39472,
+        38383,
+        37404,
+        38670,
+        38742,
+        39542
+      ],
+      "per_dst_incoming": [
+        68495,
+        75439,
+        52378,
+        65913,
+        9095,
+        7339,
+        14735,
+        10993
+      ],
+      "local_hit_ratio": 0.26805678297693397,
+      "cross_traffic_ratio": 0.7319432170230661,
+      "cross_numa_ratio": 0.3685965563575317,
+      "gpu_cv": 0.7412655211174914
+    },
+    {
+      "layer_id": 45,
+      "per_src_outgoing": [
+        32603,
+        38819,
+        39645,
+        39129,
+        37865,
+        39363,
+        37766,
+        39261
+      ],
+      "per_dst_incoming": [
+        42357,
+        65577,
+        65130,
+        90167,
+        11057,
+        13059,
+        7818,
+        9286
+      ],
+      "local_hit_ratio": 0.26775737310765935,
+      "cross_traffic_ratio": 0.7322426268923407,
+      "cross_numa_ratio": 0.3712748521108487,
+      "gpu_cv": 0.7948629381203774
+    },
+    {
+      "layer_id": 46,
+      "per_src_outgoing": [
+        33114,
+        38834,
+        39451,
+        38851,
+        37759,
+        39191,
+        38011,
+        39306
+      ],
+      "per_dst_incoming": [
+        56898,
+        66493,
+        61183,
+        79287,
+        12028,
+        12819,
+        8789,
+        7020
+      ],
+      "local_hit_ratio": 0.2660278408102011,
+      "cross_traffic_ratio": 0.733972159189799,
+      "cross_numa_ratio": 0.37308590325006485,
+      "gpu_cv": 0.7507225960976603
+    },
+    {
+      "layer_id": 47,
+      "per_src_outgoing": [
+        33159,
+        38627,
+        40147,
+        38678,
+        37624,
+        38685,
+        38759,
+        39986
+      ],
+      "per_dst_incoming": [
+        61081,
+        58778,
+        73066,
+        70814,
+        9122,
+        7323,
+        12502,
+        12979
+      ],
+      "local_hit_ratio": 0.26823483225099376,
+      "cross_traffic_ratio": 0.7317651677490062,
+      "cross_numa_ratio": 0.37010452619698037,
+      "gpu_cv": 0.7357267771505219
+    }
+  ],
+  "drop_replicas_total": 1016828,
+  "drop_fraction_total": 0.0649925038247879,
+  "drop_fraction_remote": 0.08685721939326163,
+  "drop_fraction_cross_numa": 0.08688580872599902,
+  "dropped_weight_mass_fraction": 0.043129703185342434,
+  "per_layer_drop_fraction": [
+    {
+      "layer_id": 0,
+      "drop_fraction_total": 0.060310973664187716,
+      "drop_fraction_remote": 0.08037780594512818,
+      "drop_fraction_cross_numa": 0.07929069748620081,
+      "dropped_weight_mass_fraction": 0.03859365342775695
+    },
+    {
+      "layer_id": 1,
+      "drop_fraction_total": 0.06010541688142748,
+      "drop_fraction_remote": 0.08034399747374292,
+      "drop_fraction_cross_numa": 0.07992804531200623,
+      "dropped_weight_mass_fraction": 0.03907637894945335
+    },
+    {
+      "layer_id": 2,
+      "drop_fraction_total": 0.0647902707213509,
+      "drop_fraction_remote": 0.08612701675394378,
+      "drop_fraction_cross_numa": 0.08622897222602492,
+      "dropped_weight_mass_fraction": 0.04174378668845234
+    },
+    {
+      "layer_id": 3,
+      "drop_fraction_total": 0.06465834621898241,
+      "drop_fraction_remote": 0.08629549707434721,
+      "drop_fraction_cross_numa": 0.085767220595136,
+      "dropped_weight_mass_fraction": 0.04246558513043289
+    },
+    {
+      "layer_id": 4,
+      "drop_fraction_total": 0.06445278943622218,
+      "drop_fraction_remote": 0.08586925865825196,
+      "drop_fraction_cross_numa": 0.08533516728022979,
+      "dropped_weight_mass_fraction": 0.04363498952630758
+    },
+    {
+      "layer_id": 5,
+      "drop_fraction_total": 0.0647135704292762,
+      "drop_fraction_remote": 0.0864910302409021,
+      "drop_fraction_cross_numa": 0.08653892796507398,
+      "dropped_weight_mass_fraction": 0.043087757355023744
+    },
+    {
+      "layer_id": 6,
+      "drop_fraction_total": 0.06563397393417274,
+      "drop_fraction_remote": 0.08749406972369002,
+      "drop_fraction_cross_numa": 0.08772653721682848,
+      "dropped_weight_mass_fraction": 0.04795719137141921
+    },
+    {
+      "layer_id": 7,
+      "drop_fraction_total": 0.06741035269862308,
+      "drop_fraction_remote": 0.08989738638037412,
+      "drop_fraction_cross_numa": 0.09049136829161745,
+      "dropped_weight_mass_fraction": 0.04631206869760534
+    },
+    {
+      "layer_id": 8,
+      "drop_fraction_total": 0.06483015487322975,
+      "drop_fraction_remote": 0.08691163647730452,
+      "drop_fraction_cross_numa": 0.08722868059507358,
+      "dropped_weight_mass_fraction": 0.04366693154827108
+    },
+    {
+      "layer_id": 9,
+      "drop_fraction_total": 0.06541000908131459,
+      "drop_fraction_remote": 0.08752878966404874,
+      "drop_fraction_cross_numa": 0.08796797055357344,
+      "dropped_weight_mass_fraction": 0.04353525731437662
+    },
+    {
+      "layer_id": 10,
+      "drop_fraction_total": 0.06512775200647965,
+      "drop_fraction_remote": 0.08700427889896224,
+      "drop_fraction_cross_numa": 0.08681201377994145,
+      "dropped_weight_mass_fraction": 0.04529090926410603
+    },
+    {
+      "layer_id": 11,
+      "drop_fraction_total": 0.06525660849716516,
+      "drop_fraction_remote": 0.08714820110871195,
+      "drop_fraction_cross_numa": 0.08756902051589294,
+      "dropped_weight_mass_fraction": 0.045936967594893054
+    },
+    {
+      "layer_id": 12,
+      "drop_fraction_total": 0.06544682522151045,
+      "drop_fraction_remote": 0.08747175784117144,
+      "drop_fraction_cross_numa": 0.08791894630192502,
+      "dropped_weight_mass_fraction": 0.04480085171922853
+    },
+    {
+      "layer_id": 13,
+      "drop_fraction_total": 0.06435461306236655,
+      "drop_fraction_remote": 0.08605256032622519,
+      "drop_fraction_cross_numa": 0.08613452188006483,
+      "dropped_weight_mass_fraction": 0.04360504536747475
+    },
+    {
+      "layer_id": 14,
+      "drop_fraction_total": 0.06528115259062907,
+      "drop_fraction_remote": 0.08728182619931497,
+      "drop_fraction_cross_numa": 0.08740690424783484,
+      "dropped_weight_mass_fraction": 0.04431159984794311
+    },
+    {
+      "layer_id": 15,
+      "drop_fraction_total": 0.06492833124708539,
+      "drop_fraction_remote": 0.08700174307702427,
+      "drop_fraction_cross_numa": 0.0868346658242408,
+      "dropped_weight_mass_fraction": 0.04369790713597827
+    },
+    {
+      "layer_id": 16,
+      "drop_fraction_total": 0.06603895147632723,
+      "drop_fraction_remote": 0.08824686984970359,
+      "drop_fraction_cross_numa": 0.08784365307481204,
+      "dropped_weight_mass_fraction": 0.04325043035206904
+    },
+    {
+      "layer_id": 17,
+      "drop_fraction_total": 0.06519524826350538,
+      "drop_fraction_remote": 0.08730700017255971,
+      "drop_fraction_cross_numa": 0.08750586825959561,
+      "dropped_weight_mass_fraction": 0.041197785045695476
+    },
+    {
+      "layer_id": 18,
+      "drop_fraction_total": 0.06513082001816263,
+      "drop_fraction_remote": 0.08687201018124081,
+      "drop_fraction_cross_numa": 0.08665678340259719,
+      "dropped_weight_mass_fraction": 0.04484984723318833
+    },
+    {
+      "layer_id": 19,
+      "drop_fraction_total": 0.06546523329160837,
+      "drop_fraction_remote": 0.08743827729628946,
+      "drop_fraction_cross_numa": 0.08746582732353919,
+      "dropped_weight_mass_fraction": 0.0448162003735008
+    },
+    {
+      "layer_id": 20,
+      "drop_fraction_total": 0.0650080995508431,
+      "drop_fraction_remote": 0.0875050589313885,
+      "drop_fraction_cross_numa": 0.08666557991686363,
+      "dropped_weight_mass_fraction": 0.04381117581629479
+    },
+    {
+      "layer_id": 21,
+      "drop_fraction_total": 0.06480561077976585,
+      "drop_fraction_remote": 0.08692091813640367,
+      "drop_fraction_cross_numa": 0.08710338514876348,
+      "dropped_weight_mass_fraction": 0.04446556244094407
+    },
+    {
+      "layer_id": 22,
+      "drop_fraction_total": 0.06534558083597182,
+      "drop_fraction_remote": 0.08739270298215956,
+      "drop_fraction_cross_numa": 0.08719189499749146,
+      "dropped_weight_mass_fraction": 0.04615002917723146
+    },
+    {
+      "layer_id": 23,
+      "drop_fraction_total": 0.06505411972608792,
+      "drop_fraction_remote": 0.08696115784163752,
+      "drop_fraction_cross_numa": 0.08723111758046256,
+      "dropped_weight_mass_fraction": 0.045103635451270704
+    },
+    {
+      "layer_id": 24,
+      "drop_fraction_total": 0.0659898632893994,
+      "drop_fraction_remote": 0.0880505976747994,
+      "drop_fraction_cross_numa": 0.08841626321669716,
+      "dropped_weight_mass_fraction": 0.044659667512371055
+    },
+    {
+      "layer_id": 25,
+      "drop_fraction_total": 0.06485469896669367,
+      "drop_fraction_remote": 0.08656322813397051,
+      "drop_fraction_cross_numa": 0.08690661903183827,
+      "dropped_weight_mass_fraction": 0.04544980286558858
+    },
+    {
+      "layer_id": 26,
+      "drop_fraction_total": 0.06649608521709251,
+      "drop_fraction_remote": 0.08872786818135299,
+      "drop_fraction_cross_numa": 0.08828018379591869,
+      "dropped_weight_mass_fraction": 0.04601340911944634
+    },
+    {
+      "layer_id": 27,
+      "drop_fraction_total": 0.06496514738728125,
+      "drop_fraction_remote": 0.08719769065100746,
+      "drop_fraction_cross_numa": 0.08734659536772617,
+      "dropped_weight_mass_fraction": 0.04405630682340412
+    },
+    {
+      "layer_id": 28,
+      "drop_fraction_total": 0.06599599931276538,
+      "drop_fraction_remote": 0.08827524509502177,
+      "drop_fraction_cross_numa": 0.0877379637450458,
+      "dropped_weight_mass_fraction": 0.04353969745953899
+    },
+    {
+      "layer_id": 29,
+      "drop_fraction_total": 0.06531490071914194,
+      "drop_fraction_remote": 0.08732157506152584,
+      "drop_fraction_cross_numa": 0.08758941200242473,
+      "dropped_weight_mass_fraction": 0.03967369814849282
+    },
+    {
+      "layer_id": 30,
+      "drop_fraction_total": 0.06554500159536608,
+      "drop_fraction_remote": 0.08736688858717877,
+      "drop_fraction_cross_numa": 0.08749706589395129,
+      "dropped_weight_mass_fraction": 0.0424952516835467
+    },
+    {
+      "layer_id": 31,
+      "drop_fraction_total": 0.06514002405321159,
+      "drop_fraction_remote": 0.08708777686628384,
+      "drop_fraction_cross_numa": 0.08735438232144596,
+      "dropped_weight_mass_fraction": 0.04115470978942667
+    },
+    {
+      "layer_id": 32,
+      "drop_fraction_total": 0.06450187762314999,
+      "drop_fraction_remote": 0.08703715970060277,
+      "drop_fraction_cross_numa": 0.08772359315837577,
+      "dropped_weight_mass_fraction": 0.04073606382296186
+    },
+    {
+      "layer_id": 33,
+      "drop_fraction_total": 0.06528422060231205,
+      "drop_fraction_remote": 0.08749444910445552,
+      "drop_fraction_cross_numa": 0.087815010587912,
+      "dropped_weight_mass_fraction": 0.04226822447906013
+    },
+    {
+      "layer_id": 34,
+      "drop_fraction_total": 0.06548057335002332,
+      "drop_fraction_remote": 0.08757791245901773,
+      "drop_fraction_cross_numa": 0.08725925685753194,
+      "dropped_weight_mass_fraction": 0.04276380483910515
+    },
+    {
+      "layer_id": 35,
+      "drop_fraction_total": 0.06536398890606976,
+      "drop_fraction_remote": 0.0872998311779843,
+      "drop_fraction_cross_numa": 0.08790960086648669,
+      "dropped_weight_mass_fraction": 0.04295179362370279
+    },
+    {
+      "layer_id": 36,
+      "drop_fraction_total": 0.06519524826350538,
+      "drop_fraction_remote": 0.08707196446644348,
+      "drop_fraction_cross_numa": 0.08731983805668016,
+      "dropped_weight_mass_fraction": 0.043421369947754807
+    },
+    {
+      "layer_id": 37,
+      "drop_fraction_total": 0.06379316692437965,
+      "drop_fraction_remote": 0.08533332238948077,
+      "drop_fraction_cross_numa": 0.08596139221048203,
+      "dropped_weight_mass_fraction": 0.042275284052639465
+    },
+    {
+      "layer_id": 38,
+      "drop_fraction_total": 0.06618621603711067,
+      "drop_fraction_remote": 0.08814552408036185,
+      "drop_fraction_cross_numa": 0.08803779151786793,
+      "dropped_weight_mass_fraction": 0.04234496559465753
+    },
+    {
+      "layer_id": 39,
+      "drop_fraction_total": 0.06478106668630194,
+      "drop_fraction_remote": 0.08677123871439667,
+      "drop_fraction_cross_numa": 0.08674850691385762,
+      "dropped_weight_mass_fraction": 0.04067514519902996
+    },
+    {
+      "layer_id": 40,
+      "drop_fraction_total": 0.0654314851630955,
+      "drop_fraction_remote": 0.08752123704232635,
+      "drop_fraction_cross_numa": 0.08724658122775873,
+      "dropped_weight_mass_fraction": 0.04221384154808889
+    },
+    {
+      "layer_id": 41,
+      "drop_fraction_total": 0.06368578651547505,
+      "drop_fraction_remote": 0.08520856765210538,
+      "drop_fraction_cross_numa": 0.08570481518610742,
+      "dropped_weight_mass_fraction": 0.0412482479742118
+    },
+    {
+      "layer_id": 42,
+      "drop_fraction_total": 0.06532103674250792,
+      "drop_fraction_remote": 0.08709507193494152,
+      "drop_fraction_cross_numa": 0.08764348085979466,
+      "dropped_weight_mass_fraction": 0.04420700571775952
+    },
+    {
+      "layer_id": 43,
+      "drop_fraction_total": 0.06552659352526814,
+      "drop_fraction_remote": 0.08730486394126809,
+      "drop_fraction_cross_numa": 0.08690533784873407,
+      "dropped_weight_mass_fraction": 0.04046228664129725
+    },
+    {
+      "layer_id": 44,
+      "drop_fraction_total": 0.06613712785018286,
+      "drop_fraction_remote": 0.08822145192775965,
+      "drop_fraction_cross_numa": 0.08805982280744534,
+      "dropped_weight_mass_fraction": 0.04237966970650612
+    },
+    {
+      "layer_id": 45,
+      "drop_fraction_total": 0.0659407751024716,
+      "drop_fraction_remote": 0.08793290375370769,
+      "drop_fraction_cross_numa": 0.08822153389475043,
+      "dropped_weight_mass_fraction": 0.04288365394053443
+    },
+    {
+      "layer_id": 46,
+      "drop_fraction_total": 0.06573828633139435,
+      "drop_fraction_remote": 0.08748070908897908,
+      "drop_fraction_cross_numa": 0.08772563756664739,
+      "dropped_weight_mass_fraction": 0.04251792385052054
+    },
+    {
+      "layer_id": 47,
+      "drop_fraction_total": 0.062216208919323564,
+      "drop_fraction_remote": 0.08312632709445224,
+      "drop_fraction_cross_numa": 0.08224490127042332,
+      "dropped_weight_mass_fraction": 0.038472381724020156
+    }
+  ],
+  "per_layer_drop_fraction_mean": 0.0649925038247879,
+  "per_expert_drop_fraction": {
+    "49": 0.04667000670838888,
+    "58": 0.08242363923831361,
+    "19": 0.057126343775286095,
+    "29": 0.05506707137961422,
+    "16": 0.08568132491250025,
+    "70": 0.04465886160874331,
+    "116": 0.08933162856701277,
+    "53": 0.05465111486625726,
+    "66": 0.05232172470978441,
+    "105": 0.037311449785072295,
+    "125": 0.0982887321060604,
+    "86": 0.0696431390532322,
+    "24": 0.027215895720146925,
+    "95": 0.07053045337174645,
+    "122": 0.04848397712386977,
+    "36": 0.07241636007043363,
+    "114": 0.05253124553999225,
+    "98": 0.03212145138714424,
+    "84": 0.03420367612790288,
+    "1": 0.0630754776072659,
+    "100": 0.06224632020707929,
+    "26": 0.04716693452013022,
+    "78": 0.04448438118979294,
+    "32": 0.040271005491967354,
+    "72": 0.0442090955428442,
+    "60": 0.03906356478617783,
+    "75": 0.04263449271873872,
+    "115": 0.06285249599958029,
+    "126": 0.05363663071305662,
+    "3": 0.08767582106215797,
+    "89": 0.1116913109022677,
+    "124": 0.05253975375105927,
+    "33": 0.04137460914924201,
+    "22": 0.11192947729417452,
+    "0": 0.0516541822721598,
+    "67": 0.04245382718534548,
+    "106": 0.030126177822698965,
+    "61": 0.047446223822609684,
+    "57": 0.06085989032822062,
+    "71": 0.08847286178002567,
+    "127": 0.04712918467717917,
+    "110": 0.047086070633611796,
+    "50": 0.04505592337525455,
+    "7": 0.06733328622241067,
+    "69": 0.05567167579668942,
+    "119": 0.060467694504730496,
+    "34": 0.06197846230904082,
+    "120": 0.06188004486770625,
+    "87": 0.0740752164168363,
+    "91": 0.0518333107833852,
+    "112": 0.055575036562524056,
+    "64": 0.04134255402434985,
+    "62": 0.07075322430014742,
+    "28": 0.046659226634180415,
+    "41": 0.059319193027366365,
+    "111": 0.10805493378401915,
+    "23": 0.03936662277592086,
+    "77": 0.06391468250730291,
+    "83": 0.09363024339720352,
+    "30": 0.105092684603774,
+    "81": 0.05534111310592459,
+    "93": 0.042647179571393384,
+    "92": 0.023105742247040557,
+    "65": 0.04974931968244816,
+    "73": 0.04909549145897508,
+    "21": 0.07290949248343506,
+    "12": 0.06968922281971127,
+    "2": 0.045602074947559385,
+    "80": 0.05299719887955182,
+    "104": 0.08609344054322926,
+    "103": 0.04922496680845306,
+    "118": 0.06472625463255166,
+    "51": 0.039612322602976806,
+    "14": 0.043856979441057015,
+    "107": 0.050954917500324805,
+    "31": 0.05643916823272372,
+    "18": 0.09094827586206897,
+    "101": 0.054084931083378696,
+    "63": 0.0424406604747162,
+    "68": 0.07855824256968802,
+    "85": 0.09466159574679915,
+    "11": 0.0700860456416012,
+    "121": 0.043192034414423125,
+    "88": 0.037473033010550376,
+    "109": 0.04839400061637503,
+    "27": 0.10057417956572297,
+    "52": 0.062253361819781326,
+    "17": 0.035443722943722944,
+    "97": 0.065463841138115,
+    "113": 0.1065306624440789,
+    "102": 0.04471069549970777,
+    "37": 0.058489776303346924,
+    "74": 0.05991293287972949,
+    "99": 0.11554969490123074,
+    "43": 0.02571282281032993,
+    "45": 0.08812002481955442,
+    "82": 0.060682181997290974,
+    "44": 0.08598269947344007,
+    "59": 0.07969051539455746,
+    "46": 0.10556473135362127,
+    "48": 0.0649753318614223,
+    "8": 0.05201918418077509,
+    "40": 0.05589085345120707,
+    "9": 0.06921429934212851,
+    "96": 0.03779006653810296,
+    "94": 0.052300984983045376,
+    "25": 0.03861742999353075,
+    "123": 0.09268263073234392,
+    "6": 0.03936674568235692,
+    "47": 0.060954387981544456,
+    "13": 0.05923134189465848,
+    "79": 0.05806702198821829,
+    "38": 0.06225850456743302,
+    "4": 0.09084192865722293,
+    "76": 0.06892977744096111,
+    "117": 0.08176731130269946,
+    "90": 0.06746937365829873,
+    "35": 0.0411395013393777,
+    "39": 0.04347312811734498,
+    "56": 0.0531102052753761,
+    "108": 0.03859681356466049,
+    "42": 0.041885887195703735,
+    "20": 0.042604369457062516,
+    "5": 0.09505065538670426,
+    "54": 0.03663777493420894,
+    "55": 0.07690160762131587,
+    "10": 0.05693889835609702,
+    "15": 0.02641198579004273
+  },
+  "effective_dropped_expert_load_cv": 0.28358579398671974
+}
