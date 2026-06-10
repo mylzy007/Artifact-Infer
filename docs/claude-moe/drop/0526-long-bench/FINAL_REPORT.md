@@ -75,6 +75,168 @@ moe_drop_rate:          0.3
 
 ---
 
+## 1.5 Tier 1 & Tier 2 微基准完整报告（prefill L sweep，2026-05-26）
+
+> 这是 v1-v7 真实 e2e 实验之前的**奠基性微基准**：在 isolated MoE-block 和合成 prefill 上扫 `L_recv`，
+> 找到 drop 起作用的拐点 L\*、给出 dispatch/experts/combine 三段归因，
+> 并用全模型 prefill 经验值（Tier 2）验证 Tier 1 推论。
+>
+> **原始报告**：`docs/claude-moe/drop/0526-plan/0526-final_report.md`
+> **原始数据**：`eval_results/prefill_drop_l_sweep_tier1/{rows.jsonl, summary.json, *.png}`、`eval_results/prefill_drop_l_sweep_tier2/`
+
+### 1.5.1 实验目的
+
+回答三个 pre-registered 问题：
+
+1. **L\*（拐点）在哪儿？** drop 在多大的 `L_recv`（每 rank 接收 row 数）开始 ≥5% wall-time 加速？
+2. **收益来自哪一段？** dispatch / experts GEMM / combine 三段中，drop 的省时主要来源是哪个？
+3. **拐点能否在 24GB 4090 上达到？** 真实 batch size 是否能跨过 L\*？
+
+并验证两个 pre-registered hypothesis：
+- **H1**：drop 在任何 L 上都没有 ≥5% 加速（closed-negative）
+- **H2**：drop 的收益 ≥70% 来自 experts GEMM 段（计算量减少）
+
+### 1.5.2 设计与配置
+
+| 项目 | Tier 1（隔离 MoE-block 微基准） | Tier 2（全模型 prefill） |
+|---|---|---|
+| 目的 | 找拐点 L\* + 段归因 | 验证 Tier 1 推论是否在全模型上仍然成立 |
+| 范围 | DispatchEPHT + ExpertsEPHT + CombineEPHT，剔除 attention/sampling/scheduler | Qwen3-30B-A3B 完整 48 层 + flashinfer attention + sampling + scheduler |
+| Workload | 合成 routing：T_local source tokens → K=8 random experts/token | 合成 prompt：T_local 长度的 prompt × 8 ranks 一次性 prefill |
+| T_local 扫描 | {1, 8, 64, 512, 2048} | {512, 2048} |
+| Drop policy | tail_weight | tail_weight |
+| Drop rate | {0.0, 0.3}（baseline vs drop） | {0.0, 0.3} |
+| Plan | LBG / numa_local_first / greedy_balance | smoke_plan |
+| 硬件 | 8×RTX 4090 24GB | 同 |
+| 模型 | Qwen3-30B-A3B EP-HT owner_local | 同 |
+| Iters | 30 iters/cell + 10 warmup | 3 reps + 1 warmup |
+| Falsification floor | L=8 上 drop slowdown < 2%（设计错误，事后改为诊断字段） | — |
+
+环境阻塞修复：Tier 2 的 flashinfer JIT compile 起初因系统 nvcc 不支持 sm_89 失败，通过 `CUDA_HOME=/usr/local/cuda-12.8` + 新 flashinfer JIT cache `FLASHINFER_WORKSPACE_BASE=/tmp/flashinfer_tier2` 强制重编修复。
+
+### 1.5.3 Tier 1 结果：L 扫描主表
+
+8 ranks × Qwen3-30B-A3B EP-HT × tail_weight @ 0.3 × LBG overlap，30 iters/cell：
+
+| T_local | L_send | L_recv_max | baseline_us | drop_us | **Δ%** | eff_drop_recv |
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| 1 | 8 | 18 | 4,092 | 5,134 | **+25.5%** | 0.25 |
+| 8 | 64 | 86 | 4,170 | 5,600 | **+34.3%** | 0.30 |
+| 64 | 512 | 524 | 5,069 | 6,115 | **+20.6%** | 0.30 |
+| **512** | **4,096** | **4,160** | **19,606** | **16,999** | **−13.3%** ⭐ | 0.30 |
+| 2,048 | 16,384 | 16,544 | 70,539 | 59,519 | **−15.6%** | 0.30 |
+
+**关键观察**：
+- **L\* (delta_pct = −5%) ≈ 3,271 rows/rank**（插值，落在 T=64 和 T=512 之间）→ 全 batch ≈ 3.3k prefill tokens 跨 8 ranks
+- **effective_drop_recv_frac 在 L≥64 上稳定 0.30** → drop policy 工作正常，符合 nominal rate
+- 小 L 时 drop 开销 > 收益（dispatch/combine 的固定 launch overhead 主导）；大 L 时 a2a payload bytes 主导，drop 转为正收益
+- **L\* 是陡峭转折**：+20.6% (T=64) → −13.3% (T=512)，中间无平坦带
+
+### 1.5.4 Tier 1 段归因（关键发现 — H2 推翻）
+
+T_local=2048 cell 上的三段分解：
+
+| segment | baseline_us | drop_us | Δus | **占 total 收益** |
+|:-:|:-:|:-:|:-:|:-:|
+| **dispatch** | 54,517 | 49,332 | −5,185 | **47.1%** |
+| experts | 1,229 | 920 | −309 | 2.8% |
+| **combine** | 14,796 | 9,276 | −5,520 | **50.1%** |
+| **total** | **70,539** | **59,519** | **−11,019** | 100% |
+
+**意义（H2 被推翻）**：
+
+- drop 的省时 **97% 来自通信侧**（dispatch a2a payload bytes ↓47% + combine scatter rows ↓50%），而非 expert 计算量减少
+- experts 段只占 ~1.2ms 量级（weight-residency dominated，与 L 弱相关），单独砍 30% 行只省 0.3ms → 微不足道
+- 这反过来解释 Phase 4 P1 (`K_eff=6`) 为何是负杠杆：`K_eff` 只砍 expert GEMM，砍不动 dispatch/combine 这两个真正的 bottleneck
+
+### 1.5.5 Tier 2 结果：全模型 prefill 验证
+
+Qwen3-30B-A3B 完整 48 层 + flashinfer attention + sampling + scheduler，3 reps/cell：
+
+| T_local | total prefill tokens | baseline prefill | drop prefill | **prefill speedup** | std |
+|:-:|:-:|:-:|:-:|:-:|:-:|
+| 512 | 4,096 | 0.874 s ± 0.026 | 0.797 s ± 0.019 | **+8.8% (1.096×)** | <3% |
+| 2,048 | 16,384 | 2.923 s ± 0.020 | 2.791 s ± 0.030 | **+4.5% (1.047×)** | <1% |
+
+**反直觉但合理**：T=512 (刚跨 L\*) 全模型 prefill 加速 **8.8%**，**比 T=2048 (4.5%) 更高**——
+Tier 1 MoE-block 收益是 T=2048 (−15.6%) > T=512 (−13.3%)，但全模型 prefill 反过来。
+
+原因：**attention 是 O(N²)，N 越大 attention 占 prefill 总时间越高，把 MoE-block 收益稀释更多**。drop 的甜点在 **L_recv ≈ 4k** 附近（中等 prefill），再往大走收益继续被稀释。
+
+**24GB VRAM 是否够 3.3k batch？**
+- 实测 T=2048 (16.4k 总 tokens) 在 8×4090 24GB 跑通，每 rank ~21GB（model 19GB + KV ~380MB + MoE workspace ~1.5GB），仍留 3GB 余量
+- 3.3k 全局 prefill（每 rank ~410 tokens）只用约 19.5GB → **绰绰有余**
+- VRAM 不是瓶颈
+
+### 1.5.6 Tier 1/2 结论与意义
+
+| Pre-reg | 实测 | 验证情况 |
+|---|---|---|
+| **H1**：所有 L 上 drop 都没 ≥5% 加速（closed-negative） | L\* = 3,271 存在 | **H1 推翻** |
+| **H2**：drop 收益 ≥70% 来自 experts GEMM | experts 段仅占 2.8% | **H2 推翻** |
+| 预测 L\* ∈ [4k, 16k] | L\* ≈ 3.3k | 方向对，量级略低 |
+| Effective drop frac 渐近 0.3 | L≥64 上稳定 0.30 | 一致 |
+
+**4 条关键结论**：
+
+1. **drop 起作用的 break-even 是 per-rank L_recv ≈ 3.3k**——全模型 prefill 跨过这条线 drop 才有正收益。Qwen3 短 prompt（decode 时 L_recv≈8）远低于此，drop 反而慢 25%。
+2. **收益来自通信侧**：dispatch −47% + combine −50% = 97%，**experts GEMM 仅 3%**。这是非平凡发现——它直接否定了"drop 通过减少 expert 计算量加速"的 naive 假设，给后续设计指明：要进一步加速，应砍 **a2a payload bytes** 和 **combine scatter rows**，而非 expert 算力。
+3. **甜点在 L_recv ≈ 4k**：T=2048 时 attention 已经稀释 MoE 收益，T=512 (4k 总 tokens) 的 prefill 加速反而最大（+8.8%）。**drop 不应在大 batch 上追加，而应在中等 prefill 段被用足**。
+4. **解释了 Phase 4 v1/v2 / GPU drop / K_eff 历史负实验**：
+   - GSM8K decode-heavy workload，`L_recv` 主体落在 drop 负收益区 → v1/v2 CPU drop e2e 慢 10-25%
+   - K_eff 砍 expert GEMM 但 expert 只贡献 2.8% → 杠杆错位
+   - GPU drop bypass 在 L<128 全关，但 GSM8K prefill 也被 bypass → 0 收益
+
+**指导后续 v1-v7**：必须换到 **prefill-heavy / 长 prompt workload** 才能让 drop 在 e2e 上可见。这直接催生了 v1+（LEval、LongBench passage_retrieval 等长上下文 benchmark）。
+
+### 1.5.7 可视化（`eval_results/tier_plots/`）
+
+| 文件 | 内容 |
+|---|---|
+| **`tier1_delta_vs_L.png`** ⭐ | 主图：MoE-block Δ% vs L_recv，log-x，标 L\* = 3,271 + ±0%/−5% 线，可视化"拐点"陡转折 |
+| **`tier1_segment_attribution.png`** ⭐ | 段归因双面板：左 dispatch/experts/combine baseline vs drop 条形图；右 savings 来源 donut（dispatch 47.1% + experts 2.8% + combine 50.1%）→ **H2 推翻** |
+| `tier1_total_trajectories.png` | log-log baseline vs drop 轨迹曲线，红/绿填色区分 slowdown / speedup 区 |
+| `tier2_prefill_speedup.png` | Tier 2 双面板：左 prefill 时间条形图（含 std），右 speedup 柱状图（+8.8% / +4.5%） |
+| **`tier1_vs_tier2_dilution.png`** ⭐ | Tier 1 (隔离 MoE-block) vs Tier 2 (含 attention 全 prefill) 对比，可视化 attention 稀释（T=2048: 15.6% → 4.5%，dilution 11.1 pp） |
+
+### 1.5.8 Tier 1/2 产物
+
+```
+代码：
+  eval/drop/tier1_bench.py
+  eval/drop/tier2_bench.py
+  eval/drop/shared.py
+  eval/drop/plot_tier1.py
+  eval/drop/plot_tier_report.py       # 本节 §1.5.7 的 5 张图
+  eval/drop/tests/test_drop_invariants.py
+
+数据：
+  eval_results/prefill_drop_l_sweep_tier1/
+    tier1_rows.jsonl              (300 rows = 5 T × 2 rates × 30 iters)
+    tier1_summary.json            (L*, delta_points, cell_agg)
+    tier1_total_vs_l.png          (原始)log-x total_us(L) baseline vs drop
+    tier1_delta_vs_l.png          (原始)delta_pct vs L，标 L*
+    tier1_segments.png            (原始)dispatch / experts / combine 分段曲线
+  eval_results/prefill_drop_l_sweep_tier2/
+    tier2_rows.jsonl
+    tier2_summary.json            (T=512, T=2048 两点 × 3 reps)
+  eval_results/tier_plots/         ⭐ 本报告新增的 5 张精装图
+
+复现：
+  # Tier 1 (~3 min on 8×4090)
+  torchrun --nproc_per_node=8 -m eval.drop.tier1_bench \
+    --t-local-values 1,8,64,512,2048 --drop-rates 0.0,0.3 \
+    --warmup-iters 10 --iters 30 --output-dir eval_results/prefill_drop_l_sweep_tier1
+
+  # Tier 2 (修复 nvcc 后，~5 min)
+  CUDA_HOME=/usr/local/cuda-12.8 PATH=/usr/local/cuda-12.8/bin:$PATH \
+    FLASHINFER_WORKSPACE_BASE=/tmp/flashinfer_tier2 \
+    torchrun --nproc_per_node=8 -m eval.drop.tier2_bench \
+    --t-local-values 512,2048 --drop-rate 0.3 --repeats 3
+```
+
+---
+
 ## 2. 完整实验配置（v6 主数据，所有 phase 一致）
 
 ### 2.1 硬件与模型
@@ -253,14 +415,113 @@ baseline：prefill **6.38s**, e2e **11.69s**, tok/s **754**, **acc_strict 1.000*
 
 3 个新 policy（`per_expert_uniform` / `hot_expert_relief` / `hotspot_relief`）GPU 化后，**与 5 个 score-based policy 同台比较**。Dataset 仍是 LongBench `passage_retrieval_en_e`，官方 binary metric，96 prompts × 12 batches × 2 plans = **4,800 prompt-cell** 评估。
 
-### 4.7.1 完整结果（双 plan @ r=0.5，按 acc_strict 排序）
+### 4.7.1 v7 实验配置
+
+| 项目 | 配置 |
+|---|---|
+| Runtime | `owner_local_ep`（data_parallel_size = world_size = 8） |
+| MoE | E=128, K=8, world=8 |
+| Plans | (A) `lbg_greedybal` = load_balanced + greedy_balance; (B) `rr_mincomm` = round_robin + min_communication |
+| Dataset | LongBench `passage_retrieval_en_e`，96 prompts, len ∈ [500, 5800] tokens |
+| Batch | 12 batches × 8 prompts，2 batches warmup |
+| Sampler | 贪心，max_new_tokens=32 |
+| Drop rates | {0.1, 0.3, 0.5} |
+| MOE_DROP_MIN_REPLICAS | 512（decode 阶段自动绕过） |
+| 总 cell | 2 plans × (1 baseline + 8 policies × 3 rates) = **50 cells** |
+| 总评估 | 50 cells × 96 prompts = **4,800 prompt-cell** |
+| Accuracy 指标 | (a) 官方 `retrieval_score` = 1/k（k = gt 在输出中提及次数）；(b) `acc_strict` = 输出首个整数等于 gt → 1，否则 0 |
+
+### 4.7.2 v7 8 个 GPU drop policy
+
+**Score-based（5 个，token×K 维度排序）**：`tail_weight`、`random`、`cross_numa_first`、`weighted_tail`、`cross_numa_uniform`
+
+**Grouped-quota（3 个 v7 新增 GPU 实现）**：
+
+| Policy | 分组依据 | 配额策略 |
+|---|---|---|
+| `per_expert_uniform` | expert_id (E=128) | 每个 expert 砍 `drop_rate` 比例 |
+| `hot_expert_relief` | expert_id | 只从 load > mean 的 expert 砍 |
+| `hotspot_relief` | target_rank (world=8) | 只从 load > mean 的 rank 砍 |
+
+实现机制：`scatter_add` 算每组负载 → 计算配额 → 按 (group, weight) 排序 → cummax-of-boundary 得组内 rank → mask。未端口：`per_expert_tailtoken`（复杂度/收益不匹配）。
+
+### 4.7.3 baseline 性能
+
+| Plan | prefill (s) | prefill tok/s | e2e (s) | acc_official | acc_strict |
+|---|---|---|---|---|---|
+| lbg_greedybal | 6.39 | 747 | 11.72 | 0.254 | 1.000 |
+| rr_mincomm | 6.49 | 736 | 11.84 | 0.254 | 1.000 |
+
+> `acc_official` 看似低是因为 Qwen3-30B 总会复述 GT passage id 两次（CoT），官方 metric ≈ 1/2 ≈ 0.25。`acc_strict` 看"第一个整数是否对"是更稳定的二元信号。
+
+### 4.7.4 完整结果表（48 cells，按 policy 分组）
+
+**Plan A — `lbg_greedybal` (load_balanced + greedy_balance)**
+
+| policy | r | prefill_sp | e2e_sp | tok/s | acc_off | **acc_strict** |
+|---|---|---|---|---|---|---|
+| tail_weight | 0.1 | 1.064 | 1.041 | 795 | 0.246 | 1.000 |
+| tail_weight | 0.3 | 1.236 | 1.105 | 924 | 0.384 | 1.000 |
+| tail_weight | 0.5 | **1.470** | 1.215 | 1099 | 0.679 | 0.938 |
+| random | 0.1 | 1.063 | 1.025 | 794 | 0.334 | 1.000 |
+| random | 0.3 | 1.232 | 1.124 | 921 | 0.730 | 0.969 |
+| random | 0.5 | 1.466 | 1.225 | 1095 | 0.208 | **0.208** |
+| cross_numa_first | 0.1 | 1.067 | 1.033 | 797 | 0.288 | 1.000 |
+| cross_numa_first | 0.3 | 1.243 | 1.109 | 929 | 0.481 | 1.000 |
+| cross_numa_first | 0.5 | 1.459 | 1.221 | 1091 | 0.327 | 0.385 |
+| weighted_tail | 0.1 | 1.064 | 1.038 | 795 | 0.265 | 1.000 |
+| weighted_tail | 0.3 | 1.235 | 1.116 | 923 | 0.420 | 1.000 |
+| weighted_tail | 0.5 | 1.470 | 1.218 | 1099 | 0.612 | 0.823 |
+| cross_numa_uniform | 0.1 | 1.067 | 1.036 | 798 | 0.398 | 1.000 |
+| cross_numa_uniform | 0.3 | 1.245 | 1.115 | 931 | 0.653 | 0.948 |
+| cross_numa_uniform | 0.5 | 1.461 | 1.223 | 1092 | 0.229 | 0.208 |
+| per_expert_uniform | 0.1 | 0.870 | 0.890 | 658 | 0.241 | 1.000 |
+| per_expert_uniform | 0.3 | 1.093 | 1.001 | 834 | 0.275 | 1.000 |
+| per_expert_uniform | 0.5 | 1.303 | 1.145 | 973 | 0.484 | **1.000** |
+| **hot_expert_relief** | 0.1 | 1.058 | 1.039 | 791 | 0.281 | 1.000 |
+| **hot_expert_relief** | 0.3 | 1.219 | 1.100 | 911 | 0.365 | 1.000 |
+| **hot_expert_relief** | **0.5** | **1.433** | **1.205** | **1071** | **0.756** | **1.000** ⭐ |
+| hotspot_relief | 0.1 | 1.056 | 1.032 | 789 | 0.247 | 1.000 |
+| hotspot_relief | 0.3 | 1.226 | 1.123 | 916 | 0.317 | 1.000 |
+| hotspot_relief | 0.5 | 1.441 | 1.207 | 1077 | 0.665 | 0.958 |
+
+**Plan B — `rr_mincomm` (round_robin + min_communication)**
+
+| policy | r | prefill_sp | e2e_sp | tok/s | acc_off | **acc_strict** |
+|---|---|---|---|---|---|---|
+| tail_weight | 0.1 | 1.062 | 1.037 | 782 | 0.256 | 1.000 |
+| tail_weight | 0.3 | 1.227 | 1.095 | 903 | 0.327 | 1.000 |
+| tail_weight | 0.5 | 1.466 | 1.213 | 1079 | 0.653 | 0.990 |
+| random | 0.1 | 1.063 | 1.009 | 782 | 0.351 | 1.000 |
+| random | 0.3 | 1.225 | 1.105 | 902 | 0.612 | 0.917 |
+| random | 0.5 | 1.465 | 1.215 | 1079 | 0.171 | 0.208 |
+| cross_numa_first | 0.1 | 1.071 | 1.034 | 788 | 0.271 | 1.000 |
+| cross_numa_first | 0.3 | 1.245 | 1.109 | 917 | 0.422 | 1.000 |
+| cross_numa_first | 0.5 | 1.467 | 1.218 | 1080 | 0.393 | 0.385 |
+| weighted_tail | 0.1 | 1.061 | 1.031 | 781 | 0.254 | 1.000 |
+| weighted_tail | 0.3 | 1.233 | 1.111 | 907 | 0.416 | 1.000 |
+| weighted_tail | 0.5 | 1.476 | 1.221 | 1087 | 0.712 | 0.917 |
+| cross_numa_uniform | 0.1 | 1.065 | 1.033 | 784 | 0.340 | 1.000 |
+| cross_numa_uniform | 0.3 | 1.247 | 1.109 | 918 | 0.677 | 0.938 |
+| cross_numa_uniform | 0.5 | 1.456 | 1.209 | 1072 | 0.258 | 0.250 |
+| per_expert_uniform | 0.1 | 1.005 | 0.963 | 749 | 0.245 | 1.000 |
+| per_expert_uniform | 0.3 | 1.156 | 1.081 | 851 | 0.275 | 1.000 |
+| per_expert_uniform | 0.5 | 1.175 | 1.045 | 915 | 0.455 | **1.000** |
+| **hot_expert_relief** | 0.1 | 1.014 | 1.008 | 754 | 0.258 | 1.000 |
+| **hot_expert_relief** | 0.3 | 1.226 | 1.104 | 903 | 0.427 | 1.000 |
+| **hot_expert_relief** | **0.5** | **1.429** | **1.197** | **1052** | **0.710** | **1.000** ⭐ |
+| hotspot_relief | 0.1 | 1.059 | 1.033 | 779 | 0.255 | 1.000 |
+| hotspot_relief | 0.3 | 1.222 | 1.116 | 900 | 0.340 | 1.000 |
+| hotspot_relief | 0.5 | 1.427 | 1.200 | 1050 | 0.655 | 0.979 |
+
+### 4.7.5 Pareto 排序 @ r=0.5（精度-效率权衡）
 
 **LBG / greedy_balance plan**（baseline: prefill 6.39s, e2e 11.72s, tok/s 747, strict 1.000）
 
 | 排名 | policy @ r=0.5 | prefill_sp | e2e_sp | tok/s | **acc_strict** | Δstrict | acc_official |
 |:-:|:--|:-:|:-:|:-:|:-:|:-:|:-:|
-| 🥇 | **`per_expert_uniform`** | 1.303 | 1.145 | 973 | **1.000** | **+0.000** | 0.484 |
 | 🥇 | **`hot_expert_relief`** | **1.433** | **1.205** | 1071 | **1.000** | **+0.000** | 0.756 |
+| 🥇 | **`per_expert_uniform`** | 1.303 | 1.145 | 973 | **1.000** | **+0.000** | 0.484 |
 | 3 | hotspot_relief | 1.441 | 1.207 | 1077 | 0.958 | -0.042 | 0.665 |
 | 4 | tail_weight | 1.470 | 1.215 | 1099 | 0.938 | -0.062 | 0.679 |
 | 5 | weighted_tail | 1.470 | 1.218 | 1099 | 0.823 | -0.177 | 0.612 |
@@ -272,8 +533,8 @@ baseline：prefill **6.38s**, e2e **11.69s**, tok/s **754**, **acc_strict 1.000*
 
 | 排名 | policy @ r=0.5 | prefill_sp | e2e_sp | tok/s | **acc_strict** | Δstrict |
 |:-:|:--|:-:|:-:|:-:|:-:|:-:|
-| 🥇 | **`per_expert_uniform`** | 1.175 | 1.045 | 915 | **1.000** | **+0.000** |
 | 🥇 | **`hot_expert_relief`** | 1.429 | 1.197 | 1052 | **1.000** | **+0.000** |
+| 🥇 | **`per_expert_uniform`** | 1.175 | 1.045 | 915 | **1.000** | **+0.000** |
 | 3 | tail_weight | 1.466 | 1.213 | 1079 | 0.990 | -0.010 |
 | 4 | hotspot_relief | 1.427 | 1.200 | 1050 | 0.979 | -0.021 |
 | 5 | weighted_tail | 1.476 | 1.221 | 1087 | 0.917 | -0.083 |
@@ -281,7 +542,7 @@ baseline：prefill **6.38s**, e2e **11.69s**, tok/s **754**, **acc_strict 1.000*
 | 7 | cross_numa_uniform | 1.456 | 1.209 | 1072 | 0.250 | -0.750 |
 | 8 | random | 1.465 | 1.215 | 1079 | 0.208 | -0.792 |
 
-### 4.7.2 v7 关键发现
+### 4.7.6 v7 关键发现
 
 **1. `hot_expert_relief @ r=0.5` 是新 winner — 双 plan strict 1.000 + 全速**
 
@@ -329,7 +590,7 @@ baseline：prefill **6.38s**, e2e **11.69s**, tok/s **754**, **acc_strict 1.000*
 
 → **越"smart"（用 routing 信号引导 drop）越 accuracy 稳健**。`hot_expert_relief` 用 expert load 信号 + weight 双管齐下，最稳。
 
-### 4.7.3 v7 图
+### 4.7.7 v7 图
 
 `eval_results/v7_plots/`：
 - **`v7_pareto_strict.png`** ⭐ 主图：prefill_sp × strict accuracy，最佳 Pareto 点在 hot_expert_relief @ 0.5
@@ -338,6 +599,14 @@ baseline：prefill **6.38s**, e2e **11.69s**, tok/s **754**, **acc_strict 1.000*
 - `v7_rate_curves.png` accuracy + speedup vs rate per policy
 - `v7_speedup_bars.png` 速度条形图
 - `v7_distribution_r05.png` r=0.5 上每 policy 的 per-prompt binary 分布
+- `cross_dataset_v4v5v7.png` 跨数据集对比（v4/v5/v7）
+
+### 4.7.8 v7 结论
+
+1. **新 Pareto 王者**：`hot_expert_relief @ r=0.5` —— 双 plan **acc_strict=1.000 零损失** + prefill **+43%** / e2e **+20%**。比 v6 winner `tail_weight @ 0.5` 速度低 ~2.5% 但 accuracy 高 6pp (LBG) / 1pp (RR)。
+2. **smart targeting 第一次起作用**：grouped-quota 通过 routing-load 信号只砍 over-mean 组，effective drop ≈ 0.33（nominal 0.5）。砍得少但精准。
+3. **`per_expert_uniform`** 也是 acc=1.000 零损失方案，但速度比 hot_expert_relief 慢 9-22%。
+4. **生产推荐**：r=0.5 + `hot_expert_relief` 提供 1.20× e2e + 零损失；回退选项 r=0.5 + `tail_weight` 提供 1.22× e2e 但 6pp acc_strict 损失。
 
 ### 4.7 v6 关键发现
 

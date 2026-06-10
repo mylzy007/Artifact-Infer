@@ -1,0 +1,141 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "hidden_size": 2048,
+  "n_layers": 48,
+  "num_experts": 128,
+  "test_tokens": 4096,
+  "domain": "lcc",
+  "keep_fracs": [
+    0.25,
+    0.125,
+    0.0625
+  ],
+  "variants": [
+    "topk_l2_bf16",
+    "topk_l2_fp8",
+    "naive_topk_fp8",
+    "fp8_only"
+  ],
+  "teacher": {
+    "loss": 1.1483498215675354,
+    "ppl": 3.1529856255203073
+  },
+  "results": {
+    "topk_l2_bf16": {
+      "0.25": {
+        "keep_frac": 0.25,
+        "k": 512,
+        "value_only_compression": 4.0,
+        "student_loss": 1.3137221932411194,
+        "student_ppl": 3.719994512840606,
+        "ppl_increase_pct": 17.98323730786849,
+        "final_hidden_relMSE": 0.14169640235582653
+      },
+      "0.125": {
+        "keep_frac": 0.125,
+        "k": 256,
+        "value_only_compression": 8.0,
+        "student_loss": 1.6481688022613525,
+        "student_ppl": 5.197453542412725,
+        "ppl_increase_pct": 64.84228473306275,
+        "final_hidden_relMSE": 0.26966752448228815
+      },
+      "0.0625": {
+        "keep_frac": 0.0625,
+        "k": 128,
+        "value_only_compression": 16.0,
+        "student_loss": 2.343829393386841,
+        "student_ppl": 10.421066615168947,
+        "ppl_increase_pct": 230.5142443663776,
+        "final_hidden_relMSE": 0.4043330313445514
+      }
+    },
+    "topk_l2_fp8": {
+      "0.25": {
+        "keep_frac": 0.25,
+        "k": 512,
+        "value_only_compression": 8.0,
+        "student_loss": 1.3071130514144897,
+        "student_ppl": 3.695489608903072,
+        "ppl_increase_pct": 17.206040490376186,
+        "final_hidden_relMSE": 0.1405145794636114
+      },
+      "0.125": {
+        "keep_frac": 0.125,
+        "k": 256,
+        "value_only_compression": 16.0,
+        "student_loss": 1.6421708464622498,
+        "student_ppl": 5.166372749587026,
+        "ppl_increase_pct": 63.85652721567574,
+        "final_hidden_relMSE": 0.2686029119673915
+      },
+      "0.0625": {
+        "keep_frac": 0.0625,
+        "k": 128,
+        "value_only_compression": 32.0,
+        "student_loss": 2.334172248840332,
+        "student_ppl": 10.320913244686327,
+        "ppl_increase_pct": 227.33778299364005,
+        "final_hidden_relMSE": 0.4036693992202723
+      }
+    },
+    "naive_topk_fp8": {
+      "0.25": {
+        "keep_frac": 0.25,
+        "k": 512,
+        "value_only_compression": 8.0,
+        "student_loss": 1.3359158039093018,
+        "student_ppl": 3.8034775915711148,
+        "ppl_increase_pct": 20.63098419433685,
+        "final_hidden_relMSE": 0.14134838252819565
+      },
+      "0.125": {
+        "keep_frac": 0.125,
+        "k": 256,
+        "value_only_compression": 16.0,
+        "student_loss": 1.7547931671142578,
+        "student_ppl": 5.78225165846973,
+        "ppl_increase_pct": 83.38972469991961,
+        "final_hidden_relMSE": 0.27489414952998087
+      },
+      "0.0625": {
+        "keep_frac": 0.0625,
+        "k": 128,
+        "value_only_compression": 32.0,
+        "student_loss": 2.7429295778274536,
+        "student_ppl": 15.532421947391441,
+        "ppl_increase_pct": 392.62584077998366,
+        "final_hidden_relMSE": 0.41607523446000794
+      }
+    },
+    "fp8_only": {
+      "0.25": {
+        "keep_frac": 1.0,
+        "k": 2048,
+        "value_only_compression": 2.0,
+        "student_loss": 1.1473320722579956,
+        "student_ppl": 3.149778308975893,
+        "ppl_increase_pct": -0.10172315783663445,
+        "final_hidden_relMSE": 0.007032856196291661
+      },
+      "0.125": {
+        "keep_frac": 1.0,
+        "k": 2048,
+        "value_only_compression": 2.0,
+        "student_loss": 1.1473320722579956,
+        "student_ppl": 3.149778308975893,
+        "ppl_increase_pct": -0.10172315783663445,
+        "final_hidden_relMSE": 0.007032856196291661
+      },
+      "0.0625": {
+        "keep_frac": 1.0,
+        "k": 2048,
+        "value_only_compression": 2.0,
+        "student_loss": 1.1473320722579956,
+        "student_ppl": 3.149778308975893,
+        "ppl_increase_pct": -0.10172315783663445,
+        "final_hidden_relMSE": 0.007032856196291661
+      }
+    }
+  }
+}

@@ -16,6 +16,7 @@ from ..model_runner.model_runner import ModelRunner
 from ...artifacts.block_mngr.block_manager import BlockManager
 from src.core.service import BaseService
 from src.core.orchestrator import RegistryOrchestrator
+from workshop.nanovllm_moe.services.utils import ep_ll_runtime_stats
 from workshop.nanovllm_moe.services.utils.parallel import (
     get_dp_world_size,
     get_dp_rank,
@@ -23,6 +24,64 @@ from workshop.nanovllm_moe.services.utils.parallel import (
 )
 
 DUMMY_CREATION = os.getenv("DUMMY_CREATION", False)
+
+
+def _tensor_bytes(tensor: torch.Tensor | None) -> int:
+    if tensor is None or not isinstance(tensor, torch.Tensor):
+        return 0
+    return int(tensor.numel() * tensor.element_size())
+
+
+def _ep_ll_workspace_summary(model_runner) -> dict:
+    moe_backend = getattr(model_runner, "moe_backend", None)
+    if moe_backend is None or not getattr(moe_backend, "is_ep_ll", False):
+        return {}
+    buffer_names = [
+        "send_buf",
+        "recv_buf",
+        "rev_send",
+        "rev_recv",
+        "original_indices",
+        "local_counts",
+        "masked_m_buf",
+        "hidden_recv",
+        "topk_weights_buf",
+        "topk_ids_buf",
+        "ll_inter_workspace",
+        "ll_out_workspace",
+    ]
+    bytes_by_buffer = {
+        name: _tensor_bytes(getattr(moe_backend, name, None))
+        for name in buffer_names
+    }
+    return {
+        "m_max": int(getattr(moe_backend, "M_max", 0)),
+        "m_max_config": int(getattr(model_runner.config, "moe_ll_m_max", -1)),
+        "overflow_policy": str(getattr(model_runner.config, "moe_ll_overflow_policy", "drop")),
+        "world_size": int(getattr(moe_backend, "world_size", 1)),
+        "num_experts_global": int(getattr(moe_backend, "E", 0)),
+        "num_experts_local": int(getattr(moe_backend, "E_local", 0)),
+        "hidden_size": int(getattr(moe_backend, "H", 0)),
+        "moe_intermediate_size": int(getattr(moe_backend, "N", 0)),
+        "t_cap": int(getattr(moe_backend, "T_cap", 0)),
+        "workspace_bytes_by_buffer": bytes_by_buffer,
+        "workspace_bytes_total": int(sum(bytes_by_buffer.values())),
+    }
+
+
+def _gather_ep_ll_rank_stats(local_stats: dict) -> list[dict] | None:
+    if not local_stats or not dist.is_initialized():
+        return None
+    gathered = [None for _ in range(dist.get_world_size())]
+    dist.all_gather_object(gathered, local_stats)
+    cleaned: list[dict] = []
+    for rank_id, item in enumerate(gathered):
+        if not isinstance(item, dict) or not item:
+            continue
+        entry = dict(item)
+        entry.setdefault("global_rank", rank_id)
+        cleaned.append(entry)
+    return cleaned
 
 
 def _ensure_distributed(tp_size: int = 1, data_parallel_size: int = 1, runtime_mode: str = "legacy_tp_ep"):
@@ -197,6 +256,11 @@ class LLMEngine(BaseService):
         sampling_params: SamplingParams | list[SamplingParams],
         use_tqdm: bool = True,
     ) -> list[str]:
+        ep_ll_runtime_stats.reset()
+        ep_ll_runtime_stats.set_static_metadata(
+            moe_impl=self.config.moe_impl,
+            **_ep_ll_workspace_summary(self.model_runner),
+        )
         if use_tqdm and (not self._is_owner_sharded_mode() or dist.get_rank() == 0):
             pbar = tqdm(total=len(prompts), desc="Generating", dynamic_ncols=True)
         if not isinstance(sampling_params, list):
@@ -251,6 +315,16 @@ class LLMEngine(BaseService):
             metrics["decode_tokens"] / metrics["decode_time_s"]
             if metrics["decode_time_s"] > 0 else 0.0
         )
+        ep_ll_stats = ep_ll_runtime_stats.summarize()
+        if ep_ll_stats:
+            local_ep_ll_stats = ep_ll_runtime_stats.summarize_local()
+            metrics["ep_ll_stats"] = ep_ll_stats
+            metrics["ep_ll_stats_by_rank"] = _gather_ep_ll_rank_stats(local_ep_ll_stats)
+            metrics["ep_ll_m_max"] = ep_ll_stats.get("m_max")
+            metrics["ep_ll_overflowed_replicas"] = ep_ll_stats.get("overflowed_replicas")
+            metrics["ep_ll_overflow_replica_fraction"] = ep_ll_stats.get("overflow_replica_fraction")
+            metrics["ep_ll_observed_bucket_max"] = ep_ll_stats.get("observed_bucket_max")
+            metrics["ep_ll_workspace_bytes_total"] = ep_ll_stats.get("workspace_bytes_total")
         self.last_generation_metrics = metrics
         self.reset()
         if self._is_owner_sharded_mode():

@@ -86,6 +86,7 @@ class ModelRunner(BaseService):
                 hidden_size=hf.hidden_size,
                 moe_intermediate_size=hf.moe_intermediate_size,
             ))
+            self.moe_backend = moe_backend
             m_max = moe_backend.M_max if is_ep_ll else 0
             # ep_ll_torch -> torch dispatch (host loops, eager only).
             # ep_ll_triton -> triton dispatch (cuda-graph compatible).
@@ -107,10 +108,14 @@ class ModelRunner(BaseService):
                 drop_rate=config.moe_drop_rate,
                 drop_seed=config.moe_drop_seed,
                 router_keff=config.moe_router_keff,
+                combine_compress_keep_frac=config.moe_combine_compress_keep_frac,
+                combine_compress_fp8=config.moe_combine_compress_fp8,
+                combine_compress_use_l2=config.moe_combine_compress_use_l2,
             ))
         else:
             self.model = orch.add(Qwen3ForCausalLM(config.hf_config))
             moe_backend = None
+            self.moe_backend = None
 
         orch.register(attention, "init_forward_metadata_capture_cuda_graph", self)
         orch.register(attention, "init_forward_metadata_replay_cuda_graph", self)
@@ -274,10 +279,15 @@ class ModelRunner(BaseService):
             * hf_config.head_dim
             * hf_config.torch_dtype.itemsize
         )
-        config.num_kvcache_blocks = (
+        memory_budget_blocks = (
             int(total * config.gpu_memory_utilization - used - peak + current)
             // block_bytes
         )
+        # Do not consume all remaining memory with KV cache when the configured
+        # workload could only ever touch a much smaller number of blocks.
+        max_blocks_per_seq = (config.max_model_len + self.block_size - 1) // self.block_size
+        workload_cap_blocks = max(1, int(config.max_num_seqs) * int(max_blocks_per_seq))
+        config.num_kvcache_blocks = min(memory_budget_blocks, workload_cap_blocks)
         assert config.num_kvcache_blocks > 0        
         
         self.kv_cache = torch.zeros(
@@ -456,7 +466,7 @@ class ModelRunner(BaseService):
             )
             if hasattr(self, "prepare_metadata_for_moe"):
                 self.prepare_metadata_for_moe(int(input_ids.size(0)))
-            if not self.enforce_eager and self.stage != RunningStage.WARMUP:
+            if not self.enforce_eager and self.stage != RunningStage.WARMUP and len(seqs) > 0:
                 bs = len(seqs)
                 page_counts = torch.tensor(
                     [0] + [len(seq.block_table) for seq in seqs],
@@ -543,7 +553,7 @@ class ModelRunner(BaseService):
                 }
             )
 
-        if not self.enforce_eager and self.stage != RunningStage.WARMUP:
+        if not self.enforce_eager and self.stage != RunningStage.WARMUP and len(seqs) > 0:
             # cuda_graph enabled
             bs = len(seqs)
             page_counts = torch.tensor(
@@ -584,6 +594,8 @@ class ModelRunner(BaseService):
     def run_model(
         self, input_ids: torch.Tensor, positions: torch.Tensor, is_prefill: bool
     ):
+        if input_ids.numel() == 0:
+            return self.model.compute_logits(self.model(input_ids, positions))
         if is_prefill or self.enforce_eager or input_ids.size(0) > 512:
             return self.model.compute_logits(self.model(input_ids, positions))
         else:

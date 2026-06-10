@@ -51,6 +51,15 @@ class Config:
     # Phase 4 P1: router K_eff. When > 0 and < model top_k, dispatch only
     # routes the top K_eff branches per token (no keep_mask machinery needed).
     moe_router_keff: int = 0
+    # Phase 5: combine-side topk_l2 + (optional) FP8 sparsification on the
+    # reverse a2a payload. EP-HT only. 0.0 (default) -> no compression and the
+    # combine path is bit-identical to the baseline. A value in (0, 1) keeps
+    # round(H * frac) entries per row (top-magnitude + L2 norm rescale + FP8).
+    # Env vars MOE_COMBINE_COMPRESS_KEEP_FRAC / _FP8 / _NO_L2 still override
+    # at runtime for quick toggles without re-instantiating the engine.
+    moe_combine_compress_keep_frac: float = 0.0
+    moe_combine_compress_fp8: bool = True
+    moe_combine_compress_use_l2: bool = True
     # Optional: trim model to first N layers (useful for testing big MoE on small GPUs;
     # generated text won't be coherent but the pipeline is exercised end-to-end).
     num_hidden_layers_override: int = -1

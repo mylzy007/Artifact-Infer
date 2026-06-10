@@ -59,6 +59,9 @@ class FusedMoE(nn.Module):
         drop_rate: float = 0.0,
         drop_seed: int = 0,
         router_keff: int = 0,
+        combine_compress_keep_frac: float = 0.0,
+        combine_compress_fp8: bool = True,
+        combine_compress_use_l2: bool = True,
         layer_id: int = -1,
     ) -> None:
         super().__init__()
@@ -133,7 +136,13 @@ class FusedMoE(nn.Module):
                 expert_overlap_path=expert_overlap_path,
                 layer_id=self.layer_id,
             )
-            self.combine = CombineEPHT(hidden_size=hidden_size, top_k=top_k)
+            self.combine = CombineEPHT(
+                hidden_size=hidden_size,
+                top_k=top_k,
+                compress_keep_frac=combine_compress_keep_frac,
+                compress_fp8=combine_compress_fp8,
+                compress_use_l2=combine_compress_use_l2,
+            )
         else:
             self.dispatch = Dispatch(
                 num_experts=num_experts,

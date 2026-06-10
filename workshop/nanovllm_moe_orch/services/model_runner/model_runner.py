@@ -137,10 +137,13 @@ class ModelRunner(BaseService):
             * hf_config.head_dim
             * hf_config.torch_dtype.itemsize
         )
-        config.num_kvcache_blocks = (
+        memory_budget_blocks = (
             int(total * config.gpu_memory_utilization - used - peak + current)
             // block_bytes
         )
+        max_blocks_per_seq = (config.max_model_len + self.block_size - 1) // self.block_size
+        workload_cap_blocks = max(1, int(config.max_num_seqs) * int(max_blocks_per_seq))
+        config.num_kvcache_blocks = min(memory_budget_blocks, workload_cap_blocks)
         assert config.num_kvcache_blocks > 0        
         
         self.kv_cache = torch.zeros(

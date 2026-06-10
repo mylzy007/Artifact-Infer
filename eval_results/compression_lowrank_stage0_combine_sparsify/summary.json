@@ -1,0 +1,71 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "hidden_size": 2048,
+  "n_layers": 48,
+  "num_experts": 128,
+  "test_tokens": 4096,
+  "domain": "lcc",
+  "keep_fracs": [
+    0.5,
+    0.25,
+    0.125,
+    0.0625,
+    0.03125
+  ],
+  "teacher": {
+    "loss": 1.1483498215675354,
+    "ppl": 3.1529856255203073
+  },
+  "results": {
+    "0.5": {
+      "keep_frac": 0.5,
+      "k": 1024,
+      "compression_value_only": 2.0,
+      "compression_value_plus_index": 1.0,
+      "student_loss": 1.1808553338050842,
+      "student_ppl": 3.2571589699427195,
+      "ppl_increase_pct": 3.30395874878819,
+      "final_hidden_relMSE": 0.041884806457640186
+    },
+    "0.25": {
+      "keep_frac": 0.25,
+      "k": 512,
+      "compression_value_only": 4.0,
+      "compression_value_plus_index": 2.0,
+      "student_loss": 1.3359006643295288,
+      "student_ppl": 3.8034200089545918,
+      "ppl_increase_pct": 20.6291579057532,
+      "final_hidden_relMSE": 0.1411778033534886
+    },
+    "0.125": {
+      "keep_frac": 0.125,
+      "k": 256,
+      "compression_value_only": 8.0,
+      "compression_value_plus_index": 4.0,
+      "student_loss": 1.7624310851097107,
+      "student_ppl": 5.826585114591232,
+      "ppl_increase_pct": 84.79580329928483,
+      "final_hidden_relMSE": 0.27773671707314773
+    },
+    "0.0625": {
+      "keep_frac": 0.0625,
+      "k": 128,
+      "compression_value_only": 16.0,
+      "compression_value_plus_index": 8.0,
+      "student_loss": 2.7310911417007446,
+      "student_ppl": 15.349626503240758,
+      "ppl_increase_pct": 386.8283058127725,
+      "final_hidden_relMSE": 0.414922537522237
+    },
+    "0.03125": {
+      "keep_frac": 0.03125,
+      "k": 64,
+      "compression_value_only": 32.0,
+      "compression_value_plus_index": 16.0,
+      "student_loss": 3.895307183265686,
+      "student_ppl": 49.17115559914248,
+      "ppl_increase_pct": 1459.510934688395,
+      "final_hidden_relMSE": 0.5211206034332513
+    }
+  }
+}

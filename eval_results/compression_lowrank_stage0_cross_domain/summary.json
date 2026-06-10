@@ -1,0 +1,196 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "hidden_size": 2048,
+  "n_layers": 48,
+  "num_experts": 128,
+  "test_chunks_per_domain": 8,
+  "chunk_len": 512,
+  "keep_fracs": [
+    0.25,
+    0.125
+  ],
+  "variants": [
+    "naive_topk",
+    "topk_l2"
+  ],
+  "domains": [
+    "lcc",
+    "multifieldqa",
+    "dureader",
+    "gov_report"
+  ],
+  "results": {
+    "teacher": {
+      "lcc": {
+        "loss": 1.1483498215675354,
+        "ppl": 3.1529856255203073,
+        "tokens": 4096
+      },
+      "multifieldqa": {
+        "loss": 1.8069154620170593,
+        "ppl": 6.091628563711315,
+        "tokens": 4096
+      },
+      "dureader": {
+        "loss": 3.081973075866699,
+        "ppl": 21.801375755770913,
+        "tokens": 4096
+      },
+      "gov_report": {
+        "loss": 1.8904057741165161,
+        "ppl": 6.622055194543481,
+        "tokens": 4096
+      }
+    },
+    "variants": {
+      "naive_topk": {
+        "lcc": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 1.3359006643295288,
+            "student_ppl": 3.8034200089545918,
+            "ppl_increase_pct": 20.6291579057532,
+            "final_hidden_relMSE": 0.1411778033534886
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 1.7624310851097107,
+            "student_ppl": 5.826585114591232,
+            "ppl_increase_pct": 84.79580329928483,
+            "final_hidden_relMSE": 0.27773671707314773
+          }
+        },
+        "multifieldqa": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 1.9942734241485596,
+            "student_ppl": 7.346863034905739,
+            "ppl_increase_pct": 20.60589312145575,
+            "final_hidden_relMSE": 0.08069436410795768
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 2.720425009727478,
+            "student_ppl": 15.18677540080412,
+            "ppl_increase_pct": 149.30566993650712,
+            "final_hidden_relMSE": 0.18634771030496494
+          }
+        },
+        "dureader": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 3.3662432432174683,
+            "student_ppl": 28.969491043177815,
+            "ppl_increase_pct": 32.879187844416066,
+            "final_hidden_relMSE": 0.16279721716065065
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 4.079920053482056,
+            "student_ppl": 59.140741564523076,
+            "ppl_increase_pct": 171.27068597433941,
+            "final_hidden_relMSE": 0.2963103670919204
+          }
+        },
+        "gov_report": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 2.060828447341919,
+            "student_ppl": 7.852472476338861,
+            "ppl_increase_pct": 18.580595383880727,
+            "final_hidden_relMSE": 0.07320627322514134
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 2.624081015586853,
+            "student_ppl": 13.791893824979478,
+            "ppl_increase_pct": 108.27210616341412,
+            "final_hidden_relMSE": 0.17712491119798898
+          }
+        }
+      },
+      "topk_l2": {
+        "lcc": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 1.3137221932411194,
+            "student_ppl": 3.719994512840606,
+            "ppl_increase_pct": 17.98323730786849,
+            "final_hidden_relMSE": 0.14169640235582653
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 1.6481688022613525,
+            "student_ppl": 5.197453542412725,
+            "ppl_increase_pct": 64.84228473306275,
+            "final_hidden_relMSE": 0.26966752448228815
+          }
+        },
+        "multifieldqa": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 1.9726043343544006,
+            "student_ppl": 7.189375666356333,
+            "ppl_increase_pct": 18.020584990760124,
+            "final_hidden_relMSE": 0.07414532441960904
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 2.4819414615631104,
+            "student_ppl": 11.964470443245311,
+            "ppl_increase_pct": 96.40840405994776,
+            "final_hidden_relMSE": 0.15550989063271647
+          }
+        },
+        "dureader": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 3.3093341588974,
+            "student_ppl": 27.366897398937706,
+            "ppl_increase_pct": 25.528304752481397,
+            "final_hidden_relMSE": 0.15322721629482014
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 3.8100019693374634,
+            "student_ppl": 45.15052778285702,
+            "ppl_increase_pct": 107.09944312071906,
+            "final_hidden_relMSE": 0.2742987247658351
+          }
+        },
+        "gov_report": {
+          "0.25": {
+            "keep_frac": 0.25,
+            "k": 512,
+            "student_loss": 2.0226552486419678,
+            "student_ppl": 7.558367658137536,
+            "ppl_increase_pct": 14.139303223651298,
+            "final_hidden_relMSE": 0.06700651743990264
+          },
+          "0.125": {
+            "keep_frac": 0.125,
+            "k": 256,
+            "student_loss": 2.4225659370422363,
+            "student_ppl": 11.274752535108881,
+            "ppl_increase_pct": 70.2606245927878,
+            "final_hidden_relMSE": 0.15009221054975275
+          }
+        }
+      }
+    }
+  }
+}

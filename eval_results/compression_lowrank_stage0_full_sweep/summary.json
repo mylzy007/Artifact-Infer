@@ -1,0 +1,80 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "hidden_size": 2048,
+  "n_layers": 48,
+  "calib_tokens": 8192,
+  "test_tokens": 4096,
+  "domain": "lcc",
+  "ell_list": [
+    1024,
+    512,
+    256,
+    128
+  ],
+  "teacher": {
+    "loss": 1.1483498215675354,
+    "ppl": 3.1529856255203073
+  },
+  "results": {
+    "1024": {
+      "ell": 1024,
+      "compression": 2,
+      "avg_train_explained_variance": 0.9379163860334816,
+      "student_loss": 1.934109628200531,
+      "student_ppl": 6.917881825558013,
+      "teacher_loss": 1.1483498215675354,
+      "teacher_ppl": 3.1529856255203073,
+      "ppl_increase_pct": 119.40733790742925,
+      "ppl_increase_abs": 3.7648962000377053,
+      "final_hidden_relMSE": 0.15229603588694418,
+      "top1_routing_agreement_mean": 0.6544647216796875,
+      "top1_routing_agreement_per_layer_min": 0.536376953125,
+      "top1_routing_agreement_per_layer_max": 0.9140625
+    },
+    "512": {
+      "ell": 512,
+      "compression": 4,
+      "avg_train_explained_variance": 0.8256183956532003,
+      "student_loss": 3.241084933280945,
+      "student_ppl": 25.561439164917196,
+      "teacher_loss": 1.1483498215675354,
+      "teacher_ppl": 3.1529856255203073,
+      "ppl_increase_pct": 710.7058579025089,
+      "ppl_increase_abs": 22.408453539396888,
+      "final_hidden_relMSE": 0.2652356690098275,
+      "top1_routing_agreement_mean": 0.5484466552734375,
+      "top1_routing_agreement_per_layer_min": 0.429931640625,
+      "top1_routing_agreement_per_layer_max": 0.82373046875
+    },
+    "256": {
+      "ell": 256,
+      "compression": 8,
+      "avg_train_explained_variance": 0.6932774453858898,
+      "student_loss": 8.365485906600952,
+      "student_ppl": 4296.198782289866,
+      "teacher_loss": 1.1483498215675354,
+      "teacher_ppl": 3.1529856255203073,
+      "ppl_increase_pct": 136158.11508674116,
+      "ppl_increase_abs": 4293.045796664346,
+      "final_hidden_relMSE": 0.9941499382152934,
+      "top1_routing_agreement_mean": 0.352325439453125,
+      "top1_routing_agreement_per_layer_min": 0.204833984375,
+      "top1_routing_agreement_per_layer_max": 0.731201171875
+    },
+    "128": {
+      "ell": 128,
+      "compression": 16,
+      "avg_train_explained_variance": 0.5614145139380015,
+      "student_loss": 14.571080207824707,
+      "student_ppl": 2128823.862234186,
+      "teacher_loss": 1.1483498215675354,
+      "teacher_ppl": 3.1529856255203073,
+      "ppl_increase_pct": 67517615.43147731,
+      "ppl_increase_abs": 2128820.7092485605,
+      "final_hidden_relMSE": 1.8479382121531382,
+      "top1_routing_agreement_mean": 0.18871053059895834,
+      "top1_routing_agreement_per_layer_min": 0.013427734375,
+      "top1_routing_agreement_per_layer_max": 0.654541015625
+    }
+  }
+}

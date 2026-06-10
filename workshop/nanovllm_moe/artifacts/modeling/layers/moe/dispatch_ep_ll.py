@@ -42,6 +42,7 @@ import torch.distributed as dist
 from torch import nn
 
 from src.core.artifact import Artifact
+from workshop.nanovllm_moe.services.utils import ep_ll_runtime_stats
 from workshop.nanovllm_moe.services.utils.expert_placement import build_expert_placement
 from workshop.nanovllm_moe.services.utils.parallel import (
     get_ep_group,
@@ -247,6 +248,11 @@ class DispatchEPLL(Artifact, nn.Module):
                     local_counts_cpu[target_rank, target_local] += 1
             self.local_counts.copy_(local_counts_cpu)
 
+        ep_ll_runtime_stats.record_local_counts(
+            layer_id=self.layer_id,
+            local_counts=self.local_counts,
+            m_max=self.M_max,
+        )
         self._check_overflow_eager()
 
         # ---- forward all-to-all over the dense buffer ----

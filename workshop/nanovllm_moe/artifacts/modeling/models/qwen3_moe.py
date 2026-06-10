@@ -143,6 +143,9 @@ class Qwen3MoeDecoderLayer(nn.Module):
         drop_rate: float = 0.0,
         drop_seed: int = 0,
         router_keff: int = 0,
+        combine_compress_keep_frac: float = 0.0,
+        combine_compress_fp8: bool = True,
+        combine_compress_use_l2: bool = True,
         layer_id: int = -1,
     ) -> None:
         super().__init__()
@@ -178,6 +181,9 @@ class Qwen3MoeDecoderLayer(nn.Module):
             drop_rate=drop_rate,
             drop_seed=drop_seed,
             router_keff=router_keff,
+            combine_compress_keep_frac=combine_compress_keep_frac,
+            combine_compress_fp8=combine_compress_fp8,
+            combine_compress_use_l2=combine_compress_use_l2,
             layer_id=layer_id,
         )
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -227,6 +233,9 @@ class Qwen3MoeModel(nn.Module):
         drop_rate: float = 0.0,
         drop_seed: int = 0,
         router_keff: int = 0,
+        combine_compress_keep_frac: float = 0.0,
+        combine_compress_fp8: bool = True,
+        combine_compress_use_l2: bool = True,
     ) -> None:
         super().__init__()
         self.embed_tokens = VocabParallelEmbedding(config.vocab_size, config.hidden_size)
@@ -256,6 +265,9 @@ class Qwen3MoeModel(nn.Module):
                 drop_rate=drop_rate,
                 drop_seed=drop_seed,
                 router_keff=router_keff,
+                combine_compress_keep_frac=combine_compress_keep_frac,
+                combine_compress_fp8=combine_compress_fp8,
+                combine_compress_use_l2=combine_compress_use_l2,
                 layer_id=layer_id,
             )
             for layer_id in range(config.num_hidden_layers)
@@ -298,6 +310,9 @@ class Qwen3MoeForCausalLM(Artifact, nn.Module):
         drop_rate: float = 0.0,
         drop_seed: int = 0,
         router_keff: int = 0,
+        combine_compress_keep_frac: float = 0.0,
+        combine_compress_fp8: bool = True,
+        combine_compress_use_l2: bool = True,
     ) -> None:
         super().__init__()
         self.model = Qwen3MoeModel(
@@ -317,6 +332,9 @@ class Qwen3MoeForCausalLM(Artifact, nn.Module):
             drop_rate=drop_rate,
             drop_seed=drop_seed,
             router_keff=router_keff,
+            combine_compress_keep_frac=combine_compress_keep_frac,
+            combine_compress_fp8=combine_compress_fp8,
+            combine_compress_use_l2=combine_compress_use_l2,
         )
         self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
         if getattr(config, "tie_word_embeddings", False):

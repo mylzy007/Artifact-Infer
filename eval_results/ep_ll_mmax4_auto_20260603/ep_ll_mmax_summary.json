@@ -1,0 +1,122 @@
+{
+  "config": {
+    "output_dir": "/home/lzy/Artifact-Infer/eval_results/ep_ll_mmax4_auto_20260603",
+    "model": "/home/lzy/models/Qwen3-30B-A3B",
+    "dataset": "/home/lzy/Artifact-Infer/eval_results/ep_ll_mmax_probe_4rows.jsonl",
+    "num_samples": 4,
+    "batch_size": 4,
+    "min_prompt_tokens": 3800,
+    "max_prompt_tokens": 4200,
+    "max_new_tokens": 8,
+    "max_num_batched_tokens": 4352,
+    "gpu_memory_utilization": 0.92,
+    "warmup_batches": 0,
+    "seed": 42,
+    "moe_impl": "ep_ll_triton",
+    "moe_ll_overflow_policy": "drop",
+    "m_max_values": "-1",
+    "expert_overlap_path": null,
+    "expert_placement_path": null,
+    "moe_expert_placement": "contiguous"
+  },
+  "task": "passage_retrieval_en",
+  "metric_official": "retrieval_score from THUDM/LongBench/metrics.py",
+  "cells": {
+    "mmax_auto": {
+      "impl": "ep_ll_triton",
+      "m_max_cfg": -1,
+      "m_max_effective": 1088,
+      "overflow_policy": "drop",
+      "n_batches": 1,
+      "n_prompts": 4,
+      "prefill_time_s": {
+        "n": 1,
+        "mean": 53.31998632661998,
+        "std": 0.0,
+        "p10": 53.31998632661998,
+        "p50": 53.31998632661998,
+        "p90": 53.31998632661998,
+        "p99": 53.31998632661998,
+        "min": 53.31998632661998,
+        "max": 53.31998632661998
+      },
+      "prefill_tok_s": {
+        "n": 1,
+        "mean": 72.71194662824603,
+        "std": 0.0,
+        "p10": 72.71194662824603,
+        "p50": 72.71194662824603,
+        "p90": 72.71194662824603,
+        "p99": 72.71194662824603,
+        "min": 72.71194662824603,
+        "max": 72.71194662824603
+      },
+      "e2e_total_time_s": {
+        "n": 1,
+        "mean": 158.4859194047749,
+        "std": 0.0,
+        "p10": 158.4859194047749,
+        "p50": 158.4859194047749,
+        "p90": 158.4859194047749,
+        "p99": 158.4859194047749,
+        "min": 158.4859194047749,
+        "max": 158.4859194047749
+      },
+      "decode_time_s": {
+        "n": 1,
+        "mean": 104.50031633209437,
+        "std": 0.0,
+        "p10": 104.50031633209437,
+        "p50": 104.50031633209437,
+        "p90": 104.50031633209437,
+        "p99": 104.50031633209437,
+        "min": 104.50031633209437,
+        "max": 104.50031633209437
+      },
+      "decode_tok_s": {
+        "n": 1,
+        "mean": 0.06698544316128682,
+        "std": 0.0,
+        "p10": 0.06698544316128682,
+        "p50": 0.06698544316128682,
+        "p90": 0.06698544316128682,
+        "p99": 0.06698544316128682,
+        "min": 0.06698544316128682,
+        "max": 0.06698544316128682
+      },
+      "ep_ll_observed_bucket_max": {
+        "n": 1,
+        "mean": 3752.0,
+        "std": 0.0,
+        "p10": 3752.0,
+        "p50": 3752.0,
+        "p90": 3752.0,
+        "p99": 3752.0,
+        "min": 3752.0,
+        "max": 3752.0
+      },
+      "ep_ll_overflow_replica_fraction": {
+        "n": 1,
+        "mean": 0.0960974743660872,
+        "std": 0.0,
+        "p10": 0.0960974743660872,
+        "p50": 0.0960974743660872,
+        "p90": 0.0960974743660872,
+        "p99": 0.0960974743660872,
+        "min": 0.0960974743660872,
+        "max": 0.0960974743660872
+      },
+      "ep_ll_workspace_bytes_total": 3637854784,
+      "acc_official": {
+        "mean": 0.75,
+        "sem": 0.14433756729740643,
+        "n": 4
+      },
+      "acc_strict": {
+        "mean": 1.0,
+        "sem": 0.0,
+        "n": 4
+      }
+    }
+  }
+}

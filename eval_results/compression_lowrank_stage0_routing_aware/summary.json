@@ -1,0 +1,90 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "hidden_size": 2048,
+  "n_layers": 48,
+  "num_experts": 128,
+  "calib_tokens": 8192,
+  "test_tokens": 4096,
+  "domain": "lcc",
+  "ell_list": [
+    1024,
+    512,
+    256
+  ],
+  "teacher": {
+    "loss": 1.1483498215675354,
+    "ppl": 3.1529856255203073
+  },
+  "results": {
+    "svd": {
+      "1024": {
+        "ell": 1024,
+        "compression": 2,
+        "student_loss": 1.934109628200531,
+        "student_ppl": 6.917881825558013,
+        "ppl_increase_pct": 119.40733790742925,
+        "final_hidden_relMSE": 0.15229603588694418,
+        "top1_routing_agreement_mean": 0.6544647216796875,
+        "top1_routing_agreement_min": 0.536376953125,
+        "top1_routing_agreement_max": 0.9140625
+      },
+      "512": {
+        "ell": 512,
+        "compression": 4,
+        "student_loss": 3.241084933280945,
+        "student_ppl": 25.561439164917196,
+        "ppl_increase_pct": 710.7058579025089,
+        "final_hidden_relMSE": 0.2652356690098275,
+        "top1_routing_agreement_mean": 0.5484466552734375,
+        "top1_routing_agreement_min": 0.429931640625,
+        "top1_routing_agreement_max": 0.82373046875
+      },
+      "256": {
+        "ell": 256,
+        "compression": 8,
+        "student_loss": 8.365485906600952,
+        "student_ppl": 4296.198782289866,
+        "ppl_increase_pct": 136158.11508674116,
+        "final_hidden_relMSE": 0.9941499382152934,
+        "top1_routing_agreement_mean": 0.352325439453125,
+        "top1_routing_agreement_min": 0.204833984375,
+        "top1_routing_agreement_max": 0.731201171875
+      }
+    },
+    "routing": {
+      "1024": {
+        "ell": 1024,
+        "compression": 2,
+        "student_loss": 3.413509964942932,
+        "student_ppl": 30.371660855748065,
+        "ppl_increase_pct": 863.2667085418797,
+        "final_hidden_relMSE": 0.4392998465980728,
+        "top1_routing_agreement_mean": 0.3954976399739583,
+        "top1_routing_agreement_min": 0.173583984375,
+        "top1_routing_agreement_max": 0.9892578125
+      },
+      "512": {
+        "ell": 512,
+        "compression": 4,
+        "student_loss": 7.7953691482543945,
+        "student_ppl": 2429.32604044361,
+        "ppl_increase_pct": 76948.43373787096,
+        "final_hidden_relMSE": 0.7555123734277087,
+        "top1_routing_agreement_mean": 0.20467631022135416,
+        "top1_routing_agreement_min": 0.05615234375,
+        "top1_routing_agreement_max": 0.988525390625
+      },
+      "256": {
+        "ell": 256,
+        "compression": 8,
+        "student_loss": 12.211410999298096,
+        "student_ppl": 201070.5256335385,
+        "ppl_increase_pct": 6377046.917704635,
+        "final_hidden_relMSE": 1.318084250159761,
+        "top1_routing_agreement_mean": 0.09172566731770833,
+        "top1_routing_agreement_min": 0.0068359375,
+        "top1_routing_agreement_max": 0.98876953125
+      }
+    }
+  }
+}

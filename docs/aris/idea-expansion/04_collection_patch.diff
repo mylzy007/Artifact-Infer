@@ -1,0 +1,713 @@
+diff --git a/eval/drop/run_owner_local_ep_phase4_drop_multipolicy_v2.py b/eval/drop/run_owner_local_ep_phase4_drop_multipolicy_v2.py
+index 472e62e..6e1966f 100644
+--- a/eval/drop/run_owner_local_ep_phase4_drop_multipolicy_v2.py
++++ b/eval/drop/run_owner_local_ep_phase4_drop_multipolicy_v2.py
+@@ -277,8 +277,12 @@ def main() -> int:
+         enabled=bool(args.wandb_project),
+     )
+ 
++    # [PROFILE] per-step trace warmup tagging (logging-only; SPMD -> rank-consistent).
++    from workshop.nanovllm_moe.services.utils import per_step_trace
++
+     # Warmup with baseline.
+     if args.warmup_batches > 0:
++        per_step_trace.set_warmup(True)
+         configure_drop(engine, "none", 0.0, args.min_replicas)
+         if rank == 0:
+             print(f"[v2] warmup {args.warmup_batches} baseline batches")
+@@ -291,6 +295,7 @@ def main() -> int:
+                 pt = wm_metrics.get("prefill_time_s") or 0.0
+                 print(f"  warmup {w+1}/{args.warmup_batches}  prefill={pt:.3f}s (discarded)")
+             dist.barrier()
++    per_step_trace.set_warmup(False)
+ 
+     # ---- sweep ----
+     for ci, cell in enumerate(cells):
+diff --git a/eval/drop/run_owner_local_ep_phase4_drop_passage_retrieval_v6.py b/eval/drop/run_owner_local_ep_phase4_drop_passage_retrieval_v6.py
+index 8dfe517..41acd67 100644
+--- a/eval/drop/run_owner_local_ep_phase4_drop_passage_retrieval_v6.py
++++ b/eval/drop/run_owner_local_ep_phase4_drop_passage_retrieval_v6.py
+@@ -266,8 +266,13 @@ def main() -> int:
+     truncate_file(jsonl_path)
+     dist.barrier()
+ 
++    # [PROFILE] per-step trace warmup tagging (logging-only; harness is SPMD so
++    # this sets a rank-consistent flag without any broadcast).
++    from workshop.nanovllm_moe.services.utils import per_step_trace
++
+     # Warmup (baseline)
+     if args.warmup_batches > 0:
++        per_step_trace.set_warmup(True)
+         configure_drop(engine, "none", 0.0, args.min_replicas)
+         if rank == 0:
+             print(f"[passage_retrieval] warmup {args.warmup_batches} baseline batches")
+@@ -279,6 +284,7 @@ def main() -> int:
+             if rank == 0:
+                 print(f"  warmup {w+1}: prefill={m.get('prefill_time_s'):.2f}s (discarded)")
+             dist.barrier()
++    per_step_trace.set_warmup(False)
+ 
+     # Sweep
+     for ci, cell in enumerate(cells):
+diff --git a/workshop/nanovllm_moe/_test_per_step_trace.py b/workshop/nanovllm_moe/_test_per_step_trace.py
+new file mode 100644
+index 0000000..c2e5c12
+--- /dev/null
++++ b/workshop/nanovllm_moe/_test_per_step_trace.py
+@@ -0,0 +1,228 @@
++"""Smoke test for per_step_trace recorder (Stage 1/2, no GPU required).
++
++Validates:
++  1. flag OFF  -> zero overhead: record_step is a no-op, NO file created.
++  2. flag ON   -> jsonl written, format valid, all schema fields present.
++  3. GLOBAL phase (set_global_phase) drives prefill/decode label.
++  4. step_id rollover: a new step is detected when layer_id stops increasing.
++  5. GLOBAL phase None -> phase 'unknown' (no crash).
++  6. WARMUP: explicit set_warmup() is authoritative; onset+env is the fallback.
++"""
++import glob
++import json
++import os
++import tempfile
++
++from workshop.nanovllm_moe.services.utils import per_step_trace as P
++
++EXPECTED_FIELDS = {
++    "run_id", "step_id", "layer_id", "rank_id", "phase", "is_warmup",
++    "batch_index", "num_tokens", "L_send", "L_recv", "send_counts",
++    "recv_counts", "hidden_size", "elem_size", "K_eff", "K_model",
++    "E_global", "world_size", "drop_policy", "drop_rate", "is_source_leader",
++}
++
++
++def _call(layer_id, rank=0, with_topk=False):
++    kwargs = dict(
++        layer_id=layer_id, rank=rank,
++        send_counts=[10, 20, 30, 40, 0, 5, 5, 5],
++        recv_counts=[8, 8, 8, 8, 8, 8, 8, 8],
++        num_tokens=64, hidden_size=2048, elem_size=2,
++        k_eff=8, k_model=8, e_global=128, world_size=8,
++        drop_policy="none", drop_rate=0.0, is_source_leader=True,
++    )
++    if with_topk:
++        # 64 tokens * K=8 = 512 entries
++        kwargs["topk_ids"] = [i % 128 for i in range(512)]
++        kwargs["topk_weights"] = [0.125] * 512
++    P.record_step(**kwargs)
++
++
++def test_topk_sidecar_format_and_roundtrip():
++    """Verify the binary sidecar respects the v1 format and is byte-stable on
++    read->re-encode roundtrip; verify the jsonl carries topk_offset/T/K and
++    omits the raw arrays."""
++    import numpy as np, struct, glob
++    with tempfile.TemporaryDirectory() as d:
++        P.reset(); _env(d, "sidecar_test")
++        P.set_global_phase(True); _call(0, with_topk=False)  # no topk
++        P.set_global_phase(True); _call(1, with_topk=True)   # topk record 1
++        P.set_global_phase(False); _call(0, with_topk=True)  # topk record 2 (step rollover)
++        P.reset()
++        recs = _read(d)
++        # jsonl carries pointers, NOT raw arrays
++        assert "topk_ids" not in recs[0] and "topk_offset" not in recs[0]
++        for r in recs[1:]:
++            assert "topk_ids" not in r and "topk_weights" not in r
++            assert "topk_offset" in r and "topk_T" in r and "topk_K" in r
++            assert r["topk_T"] == 64 and r["topk_K"] == 8 and r["topk_offset"] >= 8
++
++        # binary sidecar exists, has correct file header, records are parseable
++        bins = glob.glob(os.path.join(d, "*sidecar_test*topk.bin"))
++        assert len(bins) == 1, bins
++        raw = open(bins[0], "rb").read()
++        assert raw[:4] == b"TKBN" and raw[4] == 1 and raw[5] == 8 and raw[6:8] == b"\x00\x00"
++
++        # Round-trip: read each record, re-encode, compare body bytes
++        re_encoded = bytearray(raw[:8])
++        for r in recs[1:]:
++            off = r["topk_offset"]
++            T, K = r["topk_T"], r["topk_K"]
++            step_id, layer_id, T_in = struct.unpack("<III", raw[off:off+12])
++            assert step_id == r["step_id"] and layer_id == r["layer_id"] and T_in == T
++            ids = np.frombuffer(raw[off+12:off+12+T*K], dtype="<i1")
++            w   = np.frombuffer(raw[off+12+T*K:off+12+T*K+T*K*2], dtype="<f2")
++            assert list(ids) == [i % 128 for i in range(T*K)], list(ids[:5])
++            assert all(abs(x - 0.125) < 1e-3 for x in w), w[:5]
++            # re-encode
++            re_encoded += struct.pack("<III", step_id, layer_id, T)
++            re_encoded += ids.tobytes() + w.tobytes()
++        assert bytes(re_encoded) == raw, "byte-for-byte round-trip mismatch"
++    print("OK 8: sidecar v1 file header + per-record format + byte-stable round-trip correct")
++
++
++def test_topk_sidecar_collision_hardening():
++    """Second writer to the same (run_id, rank) sidecar must raise."""
++    with tempfile.TemporaryDirectory() as d:
++        # First pass: writes both jsonl and sidecar
++        P.reset(); _env(d, "col_run")
++        os.environ.pop("MOE_COLLECT_FORCE_APPEND", None)
++        P.set_global_phase(True); _call(0, with_topk=True)
++        P.reset()
++        assert os.path.exists(os.path.join(d, "per_step_trace_col_run_rank0_topk.bin"))
++        # Second pass: both jsonl and sidecar pre-exist -> first write raises
++        P.reset(); _env(d, "col_run")
++        os.environ.pop("MOE_COLLECT_FORCE_APPEND", None)
++        P.set_global_phase(True)
++        try:
++            _call(0, with_topk=True)
++            raise AssertionError("expected FileExistsError on (run_id, rank) sidecar/jsonl collision")
++        except FileExistsError as e:
++            assert "rank0" in str(e)
++    print("OK 9: sidecar collision raises (hardening covers .bin same as .jsonl)")
++
++
++def _read(d):
++    files = glob.glob(os.path.join(d, "*.jsonl"))
++    assert len(files) == 1, f"expected 1 rank file, got {files}"
++    return [json.loads(l) for l in open(files[0]) if l.strip()]
++
++
++def _env(d, run_id, warmup_batches="0"):
++    os.environ["MOE_COLLECT_PER_STEP"] = "1"
++    os.environ["MOE_COLLECT_OUT_DIR"] = d
++    os.environ["MOE_COLLECT_RUN_ID"] = run_id
++    os.environ["MOE_COLLECT_WARMUP_BATCHES"] = warmup_batches
++
++
++def test_flag_off_zero_file():
++    with tempfile.TemporaryDirectory() as d:
++        P.reset()
++        os.environ["MOE_COLLECT_PER_STEP"] = "0"
++        os.environ["MOE_COLLECT_OUT_DIR"] = d
++        os.environ["MOE_COLLECT_RUN_ID"] = "off_test"
++        assert P.enabled() is False
++        P.set_global_phase(True)
++        for lid in range(3):
++            _call(lid)
++        assert glob.glob(os.path.join(d, "*.jsonl")) == []
++    print("OK 1: flag OFF -> no file, zero overhead")
++
++
++def test_format_and_global_phase():
++    with tempfile.TemporaryDirectory() as d:
++        P.reset(); _env(d, "on_test")
++        # step0 = prefill, step1 = decode (set GLOBAL phase per step, as engine does)
++        P.set_global_phase(True)
++        for lid in (0, 1, 2): _call(lid)
++        P.set_global_phase(False)
++        for lid in (0, 1, 2): _call(lid)
++        P.reset()
++        recs = _read(d)
++        assert len(recs) == 6
++        for r in recs:
++            assert set(r.keys()) == EXPECTED_FIELDS, set(r.keys()) ^ EXPECTED_FIELDS
++        assert recs[0]["L_send"] == 115 and recs[0]["L_recv"] == 64
++        assert [r["step_id"] for r in recs] == [0, 0, 0, 1, 1, 1]
++        assert [r["phase"] for r in recs] == ["prefill"] * 3 + ["decode"] * 3
++    print("OK 2: flag ON -> jsonl valid, all fields present")
++    print("OK 3: GLOBAL phase drives prefill/decode label")
++    print("OK 4: step_id rollover correct")
++
++
++def test_unknown_phase():
++    with tempfile.TemporaryDirectory() as d:
++        P.reset(); _env(d, "none_phase")
++        # never call set_global_phase -> _GLOBAL_PHASE None -> 'unknown'
++        _call(0)
++        P.reset()
++        assert _read(d)[0]["phase"] == "unknown"
++    print("OK 5: GLOBAL phase None -> phase 'unknown' (no crash)")
++
++
++def test_warmup_explicit_and_fallback():
++    # (a) explicit set_warmup is authoritative
++    with tempfile.TemporaryDirectory() as d:
++        P.reset(); _env(d, "warm_explicit", warmup_batches="0")
++        P.set_warmup(True);  P.set_global_phase(True);  _call(0)        # warmup batch
++        P.set_warmup(False); P.set_global_phase(True);  _call(0); _call(1)  # measured
++        P.reset()
++        recs = _read(d)
++        assert [r["is_warmup"] for r in recs] == [True, False, False], [r["is_warmup"] for r in recs]
++    # (b) fallback: no set_warmup -> onset vs MOE_COLLECT_WARMUP_BATCHES=1 on GLOBAL phase
++    with tempfile.TemporaryDirectory() as d:
++        P.reset(); _env(d, "warm_fallback", warmup_batches="1")
++        # batch1 (onset1=warmup): prefill+decode ; batch2 (onset2=measured): prefill+decode
++        seq = [(0, True), (1, True), (0, False), (1, False),   # batch1
++               (0, True), (1, True), (0, False), (1, False)]   # batch2
++        for lid, pf in seq:
++            P.set_global_phase(pf); _call(lid)
++        P.reset()
++        recs = _read(d)
++        assert [r["batch_index"] for r in recs] == [1, 1, 1, 1, 2, 2, 2, 2], [r["batch_index"] for r in recs]
++        assert [r["is_warmup"] for r in recs] == [True] * 4 + [False] * 4, [r["is_warmup"] for r in recs]
++    print("OK 6: warmup explicit authoritative + onset-fallback both correct")
++
++
++def test_no_append_collision():
++    # GATE C hardening: a 2nd write to the same (run_id, rank) file must raise.
++    with tempfile.TemporaryDirectory() as d:
++        # pass 1 — creates the file
++        P.reset(); _env(d, "collide_run")
++        os.environ.pop("MOE_COLLECT_FORCE_APPEND", None)
++        P.set_global_phase(True); _call(0); _call(1)
++        P.reset()  # closes handle; file stays on disk
++        assert glob.glob(os.path.join(d, "*collide_run*rank0.jsonl"))
++        # pass 2 — same (run_id, rank) -> must raise FileExistsError on first write
++        P.reset(); _env(d, "collide_run")
++        os.environ.pop("MOE_COLLECT_FORCE_APPEND", None)
++        P.set_global_phase(True)
++        raised = False
++        try:
++            _call(0)
++        except FileExistsError:
++            raised = True
++        assert raised, "2nd write to same (run_id,rank) must raise FileExistsError"
++        # force-append override -> no raise, appends
++        P.reset(); _env(d, "collide_run")
++        os.environ["MOE_COLLECT_FORCE_APPEND"] = "1"
++        P.set_global_phase(True)
++        _call(0)  # should NOT raise
++        P.reset()
++        os.environ.pop("MOE_COLLECT_FORCE_APPEND", None)
++        n = len(open(glob.glob(os.path.join(d, "*collide_run*rank0.jsonl"))[0]).readlines())
++        assert n >= 3, f"force-append should have appended, got {n} lines"
++    print("OK 7: append-collision raises; MOE_COLLECT_FORCE_APPEND=1 overrides")
++
++
++if __name__ == "__main__":
++    test_flag_off_zero_file()
++    test_format_and_global_phase()
++    test_unknown_phase()
++    test_warmup_explicit_and_fallback()
++    test_no_append_collision()
++    test_topk_sidecar_format_and_roundtrip()
++    test_topk_sidecar_collision_hardening()
++    P.reset()
++    print("\nALL SMOKE TESTS PASSED")
+diff --git a/workshop/nanovllm_moe/artifacts/modeling/layers/moe/dispatch_ep_ht.py b/workshop/nanovllm_moe/artifacts/modeling/layers/moe/dispatch_ep_ht.py
+index ac996cc..226803c 100644
+--- a/workshop/nanovllm_moe/artifacts/modeling/layers/moe/dispatch_ep_ht.py
++++ b/workshop/nanovllm_moe/artifacts/modeling/layers/moe/dispatch_ep_ht.py
+@@ -444,6 +444,51 @@ class DispatchEPHT(Artifact, nn.Module):
+             )
+         self._debug_sync("moe_align")
+ 
++        # [PROFILE] per-step structural trace (logging-only, opt-in via
++        # MOE_COLLECT_PER_STEP=1; no-op + zero CUDA sync when disabled). All
++        # quantities below are already host-side: send_counts/recv_counts were
++        # .tolist()-ed above, T/H are shape reads. phase/warmup come from the
++        # rank-consistent GLOBAL state set by model_runner/harness (Finding 1).
++        from workshop.nanovllm_moe.services.utils import per_step_trace
++        if per_step_trace.enabled():
++            # Stage D0: also capture per-token topk_ids + topk_weights (needed
++            # by D1-I10 logit-encoding replay and D2-I5 weight-mass-loss proxy).
++            # Owner_local_ep mode always has real topk_ids/topk_weights at this
++            # point (the vllm_dp_ep idle-rank empty-tensor path is not taken).
++            # Strict ONE host-sync: concatenate float-cast ids + fp16-rounded
++            # weights into one tensor, then a single .cpu().tolist() forces a
++            # single GPU sync for both.
++            _T_K = int(topk_ids.numel())
++            if _T_K > 0:
++                _combined = torch.cat([
++                    topk_ids.flatten().to(torch.float32),
++                    topk_weights.to(torch.float16).to(torch.float32).flatten(),
++                ])
++                _combined_host = _combined.cpu().tolist()  # ONE host-sync
++                _tk_ids = [int(x) for x in _combined_host[:_T_K]]
++                _tk_w = _combined_host[_T_K:]
++            else:
++                _tk_ids = []
++                _tk_w = []
++            per_step_trace.record_step(
++                layer_id=self.layer_id,
++                rank=self.rank,
++                send_counts=send_counts,
++                recv_counts=recv_counts,
++                num_tokens=int(T),
++                hidden_size=int(H),
++                elem_size=int(hidden_states.element_size()),
++                k_eff=int(self.K),
++                k_model=int(self.K_model),
++                e_global=int(self.E_global),
++                world_size=int(self.world_size),
++                drop_policy=str(self.drop_policy),
++                drop_rate=float(self.drop_rate),
++                is_source_leader=bool(self.is_source_leader),
++                topk_ids=_tk_ids,
++                topk_weights=_tk_w,
++            )
++
+         return TokMetaEPHT(
+             recv_hidden=recv_hidden,
+             recv_topk_ids=recv_topk_ids,
+diff --git a/workshop/nanovllm_moe/services/model_runner/model_runner.py b/workshop/nanovllm_moe/services/model_runner/model_runner.py
+index ae30176..fcc4c30 100644
+--- a/workshop/nanovllm_moe/services/model_runner/model_runner.py
++++ b/workshop/nanovllm_moe/services/model_runner/model_runner.py
+@@ -606,6 +606,19 @@ class ModelRunner(BaseService):
+ 
+     @torch.inference_mode()
+     def run(self, seqs: list[Sequence], is_prefill: bool) -> list[int]:
++        # [PROFILE] rank-consistent GLOBAL phase for per-step trace (opt-in via
++        # MOE_COLLECT_PER_STEP=1; no-op when disabled). All ranks call run() in
++        # lockstep (MoE a2a requires it), so a guarded MAX all-reduce of local
++        # is_prefill gives every rank the same phase — fixing the per-OWNER
++        # mislabel where idle ranks see a cluster-prefill step as "decode".
++        from workshop.nanovllm_moe.services.utils import per_step_trace
++        if per_step_trace.enabled():
++            gp = 1 if is_prefill else 0
++            if dist.is_initialized() and dist.get_world_size() > 1:
++                _t = torch.tensor([gp], device="cuda")
++                dist.all_reduce(_t, op=dist.ReduceOp.MAX)
++                gp = int(_t.item())
++            per_step_trace.set_global_phase(bool(gp))
+         input_ids, positions = (
+             self.prepare_prefill(seqs) if is_prefill else self.prepare_decode(seqs)
+         )
+diff --git a/workshop/nanovllm_moe/services/utils/per_step_trace.py b/workshop/nanovllm_moe/services/utils/per_step_trace.py
+new file mode 100644
+index 0000000..c2e371f
+--- /dev/null
++++ b/workshop/nanovllm_moe/services/utils/per_step_trace.py
+@@ -0,0 +1,342 @@
++"""Per-step / per-layer / per-rank STRUCTURAL trace recorder (Phase: collection).
++
++Enabled ONLY when MOE_COLLECT_PER_STEP=1. Default OFF → record_step() returns
++immediately with zero overhead (no file is created, no work is done).
++
++Design contract (see docs/aris/idea-expansion/04_collection_schema.md):
++  - STRUCTURAL ONLY. No timing fields. Per-segment latency lives in the tier1
++    microbench (decision B at GATE Pre-Stage).
++  - ZERO new GPU sync on the per-layer hot path. The recorded quantities are
++    already host-synced by the caller (send_counts/recv_counts were `.tolist()`-ed
++    at dispatch_ep_ht.py :365-366) or pure CPU reads.
++  - Streaming append + per-step fsync (crash loss <= 1 step).
++
++GLOBAL phase / warmup (Finding 1 fix, GATE B):
++  `phase` and `is_warmup` must be RANK-CONSISTENT. A rank's LOCAL is_prefill is
++  per-OWNER: an idle rank (no owned tokens) sees is_prefill=False even during a
++  cluster-wide prefill step, which mislabels phase and breaks onset/warmup.
++  Fix:
++    - GLOBAL phase: model_runner.run() does a guarded MAX all-reduce of local
++      is_prefill across ranks each step and calls set_global_phase(...). All
++      ranks then record the same phase for the same step.
++    - WARMUP: the harness calls set_warmup(True/False) around its warmup loop
++      (identical on every rank since the harness is SPMD) — authoritative. If a
++      harness never calls it (e.g. GSM8K child), we fall back to prefill-onset
++      counting vs MOE_COLLECT_WARMUP_BATCHES, which is now also rank-consistent
++      because the onset is computed on the GLOBAL phase.
++
++step_id: incremented on layer_id rollover (forward restarts at the lowest MoE
++layer; all 48 layers are MoE).
++"""
++from __future__ import annotations
++
++import json
++import os
++import struct
++import time
++from pathlib import Path
++from typing import Any, BinaryIO, TextIO
++
++import numpy as np
++
++# Module-level state. A fresh process (each torchrun invocation) starts clean.
++_ENABLED: bool | None = None
++_FH: TextIO | None = None
++_STEP: int = 0
++_LAST_LAYER: int = -1
++_RUN_ID: str | None = None
++_OUT_DIR: str | None = None
++# global phase / warmup
++_GLOBAL_PHASE: bool | None = None     # set by model_runner each step (rank-consistent)
++_WARMUP_EXPLICIT: bool | None = None  # set by harness set_warmup(); authoritative if not None
++_WARMUP_BATCHES: int | None = None    # K fallback from env
++_PREFILL_ONSETS: int = 0
++_PREV_PHASE: str | None = None        # last KNOWN global phase ("prefill"/"decode")
++# Stage D0: topk sidecar binary (see docs/aris/idea-expansion/topk_sidecar_format_v1.md)
++_TOPK_FH: BinaryIO | None = None
++_TOPK_K: int | None = None            # cached for file-level header validation
++
++SIDECAR_MAGIC = b"TKBN"
++SIDECAR_VERSION = 1
++SIDECAR_FILE_HEADER_SIZE = 8           # magic(4) + version(1) + K(1) + reserved(2)
++SIDECAR_RECORD_HEADER_SIZE = 12        # step_id(4) + layer_id(4) + T(4)
++
++
++def enabled() -> bool:
++    global _ENABLED
++    if _ENABLED is None:
++        _ENABLED = os.environ.get("MOE_COLLECT_PER_STEP", "0") == "1"
++    return _ENABLED
++
++
++def set_global_phase(is_prefill: bool | None) -> None:
++    """Set the rank-consistent GLOBAL phase for the current step. Called once per
++    step by model_runner.run() (after a MAX all-reduce of local is_prefill)."""
++    global _GLOBAL_PHASE
++    _GLOBAL_PHASE = None if is_prefill is None else bool(is_prefill)
++
++
++def set_warmup(flag: bool) -> None:
++    """Authoritative warmup toggle, called by the harness around its warmup loop.
++    Identical across ranks (SPMD harness), so rank-consistent without broadcast."""
++    global _WARMUP_EXPLICIT
++    _WARMUP_EXPLICIT = bool(flag)
++
++
++def _warmup_batches() -> int:
++    global _WARMUP_BATCHES
++    if _WARMUP_BATCHES is None:
++        try:
++            _WARMUP_BATCHES = int(os.environ.get("MOE_COLLECT_WARMUP_BATCHES", "0"))
++        except ValueError:
++            _WARMUP_BATCHES = 0
++    return _WARMUP_BATCHES
++
++
++def _run_id() -> str:
++    global _RUN_ID
++    if _RUN_ID is None:
++        _RUN_ID = os.environ.get("MOE_COLLECT_RUN_ID") or time.strftime("%Y%m%d_%H%M%S")
++    return _RUN_ID
++
++
++def _out_dir() -> str:
++    global _OUT_DIR
++    if _OUT_DIR is None:
++        _OUT_DIR = os.environ.get(
++            "MOE_COLLECT_OUT_DIR",
++            "/home/lzy/Artifact-Infer/docs/aris/idea-expansion/raw_collection",
++        )
++    return _OUT_DIR
++
++
++def _topk_path(rank: int) -> Path:
++    return Path(_out_dir()) / f"per_step_trace_{_run_id()}_rank{rank}_topk.bin"
++
++
++def _topk_handle(rank: int, K: int) -> BinaryIO:
++    """Open the sidecar binary file. Same hardening contract as the jsonl
++    handle: if the (run_id, rank) sidecar exists, raise FileExistsError unless
++    MOE_COLLECT_FORCE_APPEND=1. Writes the 8-byte file header (TKBN magic +
++    version=1 + K + reserved) on first open."""
++    global _TOPK_FH, _TOPK_K
++    if _TOPK_FH is None:
++        out_dir = _out_dir()
++        Path(out_dir).mkdir(parents=True, exist_ok=True)
++        path = _topk_path(rank)
++        force_append = os.environ.get("MOE_COLLECT_FORCE_APPEND", "0") == "1"
++        if path.exists() and not force_append:
++            raise FileExistsError(
++                f"topk sidecar already exists: {path}\n"
++                f"  (run_id={_run_id()!r}, rank={rank}). Same hardening as the "
++                f"jsonl: appending would conflate two collection passes.\n"
++                f"  -> Use a fresh MOE_COLLECT_RUN_ID (e.g. add a suffix), or "
++                f"set MOE_COLLECT_FORCE_APPEND=1."
++            )
++        _TOPK_FH = open(path, "ab" if force_append else "wb")
++        # If the file is empty (fresh write or freshly force-appended into an
++        # empty file), emit the file header now.
++        if _TOPK_FH.tell() == 0:
++            assert 0 < K < 256, f"K must fit in u8 byte (0..255), got {K}"
++            header = SIDECAR_MAGIC + bytes([SIDECAR_VERSION, K]) + b"\x00\x00"
++            assert len(header) == SIDECAR_FILE_HEADER_SIZE
++            _TOPK_FH.write(header)
++            _TOPK_FH.flush()
++        _TOPK_K = K
++    return _TOPK_FH
++
++
++def _write_topk_record(
++    rank: int, step_id: int, layer_id: int, T: int, K: int,
++    ids_bytes: bytes, w_bytes: bytes,
++) -> int:
++    """Write one record to the sidecar and return its byte offset (= start of
++    the record's step_id field). Sidecar layout: little-endian throughout, no
++    inter-record padding. See topk_sidecar_format_v1.md."""
++    fh = _topk_handle(rank, K)
++    offset = fh.tell()
++    fh.write(struct.pack("<III", int(step_id), int(layer_id), int(T)))
++    fh.write(ids_bytes)
++    fh.write(w_bytes)
++    return offset
++
++
++def _handle(rank: int) -> TextIO:
++    global _FH
++    if _FH is None:
++        out_dir = _out_dir()
++        Path(out_dir).mkdir(parents=True, exist_ok=True)
++        path = Path(out_dir) / f"per_step_trace_{_run_id()}_rank{rank}.jsonl"
++        # Hardening (GATE C): refuse to append to an existing (run_id, rank)
++        # file — that silently concatenates two model passes (e.g. a profiling
++        # pass + an eval pass) into one file, as seen with the GSM8K pipeline.
++        # Granularity is per (run_id, rank): each rank writes its own file, so
++        # only a true collision (same run_id AND same rank already on disk)
++        # raises. Set MOE_COLLECT_FORCE_APPEND=1 to opt back into append.
++        force_append = os.environ.get("MOE_COLLECT_FORCE_APPEND", "0") == "1"
++        if path.exists() and not force_append:
++            raise FileExistsError(
++                f"per_step_trace output already exists: {path}\n"
++                f"  (run_id={_run_id()!r}, rank={rank}). Appending would conflate "
++                f"two collection passes.\n"
++                f"  -> Use a fresh MOE_COLLECT_RUN_ID (e.g. add a timestamp/clean "
++                f"suffix), or set MOE_COLLECT_FORCE_APPEND=1 to append on purpose."
++            )
++        # Fresh file by default ('w'); 'a' only when force-append is requested.
++        _FH = open(path, "a" if force_append else "w", buffering=1)
++    return _FH
++
++
++def record_step(
++    *,
++    layer_id: int,
++    rank: int,
++    send_counts: list[int],
++    recv_counts: list[int],
++    num_tokens: int,
++    hidden_size: int,
++    elem_size: int,
++    k_eff: int,
++    k_model: int,
++    e_global: int,
++    world_size: int,
++    drop_policy: str,
++    drop_rate: float,
++    is_source_leader: bool,
++    # Stage D0 (D1-I10 / D2-I5 replay support, opt-in):
++    # Flattened length-(T*K) lists. Caller is responsible for the ONE host-sync
++    # (a single combined .cpu().tolist() in dispatch_ep_ht.py). Stored as int /
++    # float in JSON; semantically uint8 expert ids (E<=128) and float16-rounded
++    # router weights. When None, fields are simply omitted from the record.
++    topk_ids: list[int] | None = None,
++    topk_weights: list[float] | None = None,
++) -> None:
++    """Append one structural record. No-op (instant return) when disabled.
++    Phase/warmup come from the rank-consistent GLOBAL state, not local context."""
++    if not enabled():
++        return
++
++    global _STEP, _LAST_LAYER, _PREFILL_ONSETS, _PREV_PHASE
++
++    new_step = _LAST_LAYER >= 0 and layer_id <= _LAST_LAYER
++    if new_step:
++        _STEP += 1
++        # fsync BOTH jsonl and topk sidecar on step boundary so they advance
++        # together. Crash mid-step bounds loss to <= 1 step in BOTH files.
++        if _FH is not None:
++            try:
++                _FH.flush()
++                os.fsync(_FH.fileno())
++            except (OSError, ValueError):
++                pass
++        if _TOPK_FH is not None:
++            try:
++                _TOPK_FH.flush()
++                os.fsync(_TOPK_FH.fileno())
++            except (OSError, ValueError):
++                pass
++    _LAST_LAYER = layer_id
++
++    phase = (
++        ("prefill" if _GLOBAL_PHASE else "decode")
++        if _GLOBAL_PHASE is not None else "unknown"
++    )
++
++    # prefill-onset (batch) counting on the GLOBAL phase -> rank-consistent.
++    if phase == "prefill" and _PREV_PHASE != "prefill":
++        _PREFILL_ONSETS += 1
++    if phase in ("prefill", "decode"):
++        _PREV_PHASE = phase
++
++    if _WARMUP_EXPLICIT is not None:
++        is_warmup = _WARMUP_EXPLICIT
++    else:
++        is_warmup = _PREFILL_ONSETS <= _warmup_batches()
++
++    L_send = int(sum(send_counts))
++    L_recv = int(sum(recv_counts))
++    rec: dict[str, Any] = {
++        "run_id": _run_id(),
++        "step_id": _STEP,
++        "layer_id": int(layer_id),
++        "rank_id": int(rank),
++        "phase": phase,
++        "is_warmup": bool(is_warmup),
++        "batch_index": int(_PREFILL_ONSETS),
++        "num_tokens": int(num_tokens),
++        "L_send": L_send,
++        "L_recv": L_recv,
++        "send_counts": [int(x) for x in send_counts],
++        "recv_counts": [int(x) for x in recv_counts],
++        "hidden_size": int(hidden_size),
++        "elem_size": int(elem_size),
++        "K_eff": int(k_eff),
++        "K_model": int(k_model),
++        "E_global": int(e_global),
++        "world_size": int(world_size),
++        "drop_policy": str(drop_policy),
++        "drop_rate": float(drop_rate),
++        "is_source_leader": bool(is_source_leader),
++    }
++    # Topk sidecar binary (D0). When both lists are provided, encode them as
++    # int8 + float16 and write a single record into the per-rank sidecar; store
++    # only an offset (+ T, K) in the jsonl so the structural log stays small.
++    # See docs/aris/idea-expansion/topk_sidecar_format_v1.md.
++    if topk_ids is not None and topk_weights is not None:
++        T_K = len(topk_ids)
++        assert len(topk_weights) == T_K, (
++            f"topk_ids/topk_weights length mismatch: {T_K} vs {len(topk_weights)}"
++        )
++        K = int(k_eff)
++        if T_K > 0:
++            assert T_K % K == 0, f"len(topk_ids)={T_K} not divisible by K={K}"
++            T = T_K // K
++            ids_np = np.asarray(topk_ids, dtype=np.int8)
++            w_np = np.asarray(topk_weights, dtype=np.float16)
++            ids_bytes = ids_np.tobytes()
++            w_bytes = w_np.tobytes()
++            offset = _write_topk_record(
++                rank=rank, step_id=_STEP, layer_id=int(layer_id),
++                T=T, K=K, ids_bytes=ids_bytes, w_bytes=w_bytes,
++            )
++            rec["topk_offset"] = int(offset)
++            rec["topk_T"] = int(T)
++            rec["topk_K"] = int(K)
++        else:
++            # T=0: no record in sidecar, sentinel offset.
++            rec["topk_offset"] = -1
++            rec["topk_T"] = 0
++            rec["topk_K"] = int(K)
++    _handle(rank).write(json.dumps(rec, separators=(",", ":")) + "\n")
++
++
++def reset() -> None:
++    """Reset module state and close the file handles (final fsync of both jsonl
++    and topk sidecar binary). For tests and end-of-run cleanup."""
++    global _ENABLED, _FH, _STEP, _LAST_LAYER, _RUN_ID, _OUT_DIR
++    global _GLOBAL_PHASE, _WARMUP_EXPLICIT, _WARMUP_BATCHES, _PREFILL_ONSETS, _PREV_PHASE
++    global _TOPK_FH, _TOPK_K
++    for fh in (_FH, _TOPK_FH):
++        if fh is not None:
++            try:
++                fh.flush()
++                os.fsync(fh.fileno())
++            except (OSError, ValueError):
++                pass
++            try:
++                fh.close()
++            except Exception:
++                pass
++    _ENABLED = None
++    _FH = None
++    _TOPK_FH = None
++    _TOPK_K = None
++    _STEP = 0
++    _LAST_LAYER = -1
++    _RUN_ID = None
++    _OUT_DIR = None
++    _GLOBAL_PHASE = None
++    _WARMUP_EXPLICIT = None
++    _WARMUP_BATCHES = None
++    _PREFILL_ONSETS = 0
++    _PREV_PHASE = None

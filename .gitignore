@@ -193,3 +193,12 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# Large activation dumps from Stage-0 compression experiments (regenerable from
+# eval/compression/stage0_low_rank_svd*.py).
+eval_results/compression_lowrank_stage0*/activations_layer*.pt
+eval_results/compression_lowrank_stage0*/top1_layer*.pt
+
+# Large per-step trace dumps from aris idea-expansion runs (~1.4 GB; regenerable
+# from the original run scripts; would otherwise refuse the GitHub push).
+docs/aris/idea-expansion/raw_collection/
+docs/aris/idea-expansion/raw_collection_v2/

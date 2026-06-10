@@ -83,6 +83,9 @@ class CombineEPLL(Artifact, nn.Module):
         else:
             self.rev_recv.copy_(self.rev_send)
 
+        if tok_meta.T_local == 0 or tok_meta.topk_weights.size(0) == 0:
+            return torch.zeros((0, H), dtype=dtype, device=device)
+
         # 3. Scatter-reduce by (t, k) with topk_weights — DENSE (cuda-graph compatible).
         # original_indices[r,e,m,0]=t, ...[r,e,m,1]=k. -1 means "this slot was unused".
         # The boolean-mask version (rec[valid]) produces dynamic shapes that break
