@@ -1,0 +1,74 @@
+{
+  "model_path": "/home/lzy/models/Qwen3-30B-A3B",
+  "hidden_size": 2048,
+  "n_layers": 48,
+  "num_experts": 128,
+  "test_tokens_per_chunk": 512,
+  "test_chunks": 8,
+  "test_tokens": 4096,
+  "shifted_predictions": 4088,
+  "domain": "lcc",
+  "keep_fracs": [
+    0.5,
+    0.25,
+    0.125
+  ],
+  "results": {
+    "teacher": {
+      "label": "teacher",
+      "keep_frac": null,
+      "loss": 1.1483498215675354,
+      "ppl": 3.1529856255203073,
+      "top1_correct": 3113,
+      "top5_correct": 3712,
+      "total": 4088,
+      "top1_acc": 0.7614970645792564,
+      "top5_acc": 0.9080234833659491
+    },
+    "keep=0.5_fp8_l2": {
+      "label": "keep=0.5_fp8_l2",
+      "keep_frac": 0.5,
+      "loss": 1.1711108684539795,
+      "ppl": 3.2255738372616705,
+      "top1_correct": 3086,
+      "top5_correct": 3713,
+      "total": 4088,
+      "top1_acc": 0.7548923679060665,
+      "top5_acc": 0.9082681017612525,
+      "agreement_with_teacher_top1": 0.9483855185909981,
+      "ppl_increase_pct": 2.3022056032806897,
+      "top1_drop_pp": 0.6604696673189858,
+      "top5_drop_pp": -0.024461839530343088
+    },
+    "keep=0.25_fp8_l2": {
+      "label": "keep=0.25_fp8_l2",
+      "keep_frac": 0.25,
+      "loss": 1.3071128726005554,
+      "ppl": 3.6954889480980952,
+      "top1_correct": 2952,
+      "top5_correct": 3630,
+      "total": 4088,
+      "top1_acc": 0.7221135029354208,
+      "top5_acc": 0.8879647749510763,
+      "agreement_with_teacher_top1": 0.8647260273972602,
+      "ppl_increase_pct": 17.20601953230484,
+      "top1_drop_pp": 3.9383561643835607,
+      "top5_drop_pp": 2.0058708414872783
+    },
+    "keep=0.125_fp8_l2": {
+      "label": "keep=0.125_fp8_l2",
+      "keep_frac": 0.125,
+      "loss": 1.6421709656715393,
+      "ppl": 5.166373365466687,
+      "top1_correct": 2728,
+      "top5_correct": 3453,
+      "total": 4088,
+      "top1_acc": 0.6673189823874756,
+      "top5_acc": 0.8446673189823874,
+      "agreement_with_teacher_top1": 0.7578277886497065,
+      "ppl_increase_pct": 63.85654674889708,
+      "top1_drop_pp": 9.417808219178081,
+      "top5_drop_pp": 6.335616438356162
+    }
+  }
+}
