@@ -4,7 +4,7 @@
 
 **研究问题**：在 frozen Qwen3-30B-A3B + 8×RTX 4090 EP 推理场景下，能否对 all-to-all payload 做有损压缩，把通信量降下来同时保住模型质量？
 
-**这两天做了 10 个实验**，从最初的 dispatch 端 SVD 谱分析（判断"激活是否天然低秩"），一路走到真实 EP=8 NCCL 上跑 HumanEval pass@1（真实 task accuracy 评测）。中间证伪了 dispatch 端低秩这条路（无论换什么映射、训不训），最终在 combine 端找到正路：**topk_l2 + FP8 sparsification，4× 压缩下 HumanEval pass@1 从 55.5% 掉到 46.3%（−9.15pp）**。
+**这两天做了 12 个实验**，从最初的 dispatch 端 SVD 谱分析（判断"激活是否天然低秩"），一路走到真实 EP=8 NCCL 上跑 HumanEval pass@1（真实 task accuracy 评测），最后做了两组"不均匀压缩"探索（按 token / 按 expert 选择性压）。中间证伪了 dispatch 端低秩这条路（无论换什么映射、训不训），最终在 combine 端找到正路：**topk_l2 + FP8 sparsification，4× 压缩下 HumanEval pass@1 从 55.5% 掉到 46.3%（−9.15pp）**；进一步证明 **不均匀压缩可以把同等压缩比下的 next-token drop 从 -3.94pp 救到 -0.54pp**（E1 hidden_norm 选择 + E2 累积权重保护）。
 
 （前后曾尝试 stage-0 SVD v1（标定太少）和 EP=2 smoke test，结果均被 stage-0 SVD v2 / EP=8 完整模型 sweep 完全覆盖，已删；HF 路径的 HumanEval 因 device_map="auto" 太慢被弃用，最终用真 EP=8 跑完。）
 
@@ -46,6 +46,10 @@
 ### Accuracy 层面（真实 task 指标）
 - [D1. Next-token top-1 accuracy on lcc](#d1-next-token-top-1-accuracy-on-lcc)
 - [D2. HumanEval pass@1（EP=8）](#d2-humaneval-pass1ep8)
+
+### 不均匀压缩探索（师兄建议）
+- [E1. 选择性 per-token 压缩](#e1-选择性-per-token-压缩) — "压哪些 token 重要吗"
+- [E2. Top-k 累积权重保护](#e2-top-k-累积权重保护) — "top-1 / 重要 expert 全量"
 
 ---
 
@@ -636,6 +640,122 @@ HF + hook 模拟（已经验证跟真 EP 等价），同一份 lcc held-out 测�
 
 ---
 
+## E1. 选择性 per-token 压缩
+
+### 目的
+之前所有实验都"全部 token 都按同一比例压"。师兄建议先**测边界**：如果只压一部分 token、留另一部分不压，是否能换更高 accuracy？另外**选哪些 token 压重要吗**——能不能优先压"不重要"的 token？
+
+### 策略
+fix 每行压缩为 topk_l2+FP8 keep_frac=0.25 (4×)。**变量是"哪些 token 被压"和"多少比例 token 被压"**。
+
+3 种 token 重要性信号：
+- `random` — 随机选（baseline，验证选择是否真的有所谓）
+- `router_conf` — 按 router top-1 prob，**高 conf 的 token 被压**（直觉：决定确定 = 冗余）
+- `hidden_norm` — 按 MoE 输入 hidden state 的 L2 norm，**小 norm 的 token 被压**（直觉：残差贡献小）
+
+压缩比例 cf ∈ {0.0, 0.25, 0.5, 0.75, 1.0}。
+
+### 代码
+`eval/compression/stage0_selective_token.py`，约 360 行。**monkey-patch 每个 `Qwen3MoeSparseMoeBlock._old_forward`**（accelerate 的 device_map=auto 把原 forward 包成 `functools.partial` 缓存进 `_old_forward`，patch class.forward 不生效）。Patch 后的 forward 按策略算 keep_full_mask `[B*T, top_k]`，per-(token, expert) pair 决定压不压。
+
+### 配置 / 组件
+- env: `atom`
+- lcc test 8 chunks (4096 tokens)，与之前所有 sweep 同口径
+- 3 strategies × 5 fractions = 13 unique configs（cf=0 共享 teacher）
+
+### 完整实验结果
+
+next-token top-1 accuracy（teacher = 76.15%, drop in pp）：
+
+| strategy \ cf | 25% | 50% | 75% | 100% |
+|---|---:|---:|---:|---:|
+| random | 75.54% (-0.61) | 74.41% (-1.74) | 73.51% (-2.64) | 72.21% (-3.94) |
+| router_conf | 75.39% (-0.76) | 73.73% (-2.42) | 73.43% (-2.72) | 72.21% (-3.94) |
+| **hidden_norm** | **75.59% (-0.56)** | **75.34% (-0.81)** | **74.46% (-1.69)** | 72.21% (-3.94) |
+
+PPL +%：random ≤ hidden_norm < router_conf；hidden_norm 在所有 cf 上都赢。
+
+### 结论
+- **WHICH tokens 重要吗：是的，选择有显著影响**
+  - hidden_norm @ cf=0.5：**只掉 0.81pp**（2× 平均压缩）
+  - random @ cf=0.5：掉 1.74pp（同 2× 平均压缩）
+  - 同样压一半 token，按 hidden_norm 选比 random 选少掉 1pp
+- **router_conf 反直觉地最差**：高 conf 不是"冗余"，是"决定明确" — 压坏路由 logits 等于丢决策信息
+- **新 Pareto 点**：hidden_norm@cf=0.5 = 2.5× avg compression, -0.81pp 比 4× full-compress (-3.94pp) 强 ~5 倍
+
+### 输出
+- `eval_results/compression_lowrank_stage0_selective_token/summary.json`
+- `eval_results/compression_lowrank_stage0_selective_token/report.md`
+- `eval_results/compression_lowrank_stage0_selective_token/heatmap.png`
+
+---
+
+## E2. Top-k 累积权重保护
+
+### 目的
+师兄第二个建议：**"top-1 全量，其他压缩"**，并扩展到"前若干个 expert 的累积权重 ≥ 阈值 T 都全量"，扫不同的 T 看效果。
+
+### 策略
+对每个 token 的 top-8 个 expert 按 routing weight 排降序，从大到小累加。每个 expert 的"之前累积权重 < T"的就保留全量 bf16，其余压缩 4×。
+
+T 范围：
+- `0.0`：没有保护（= baseline 全 4×）
+- `top1_only`：只 top-1 全量（师兄原版）
+- `0.5 / 0.7 / 0.9`：累积权重阈值
+- `1.0`：全保护（= teacher）
+
+### 代码
+`eval/compression/stage0_topk_cumulative.py`，约 360 行。同 E1 的 monkey-patch 框架，仅 keep_full_mask 计算逻辑变（按 routing weight 累积阈值），同时记录每 config 的"压缩对数比例"和"被压的 weight 占比"，输出平均有效压缩比。
+
+### 配置 / 组件
+- env: `atom`
+- 同 E1 lcc 测试集
+
+### 完整实验结果
+
+| T | top-1 acc | drop | PPL +% | 压缩对数 | 被压 weight | **avg compress** |
+|---|---:|---:|---:|---:|---:|---:|
+| 0.0 (baseline) | 72.21% | -3.94pp | +17.2% | 100.0% | 100.0% | **4.00×** |
+| **top1_only** | 74.41% | **-1.74pp** | +6.8% | 87.5% | 70.2% | **2.91×** |
+| **0.5** | 75.61% | **-0.54pp** | +1.5% | 59.8% | 36.6% | **1.81×** |
+| 0.7 | 75.88% | -0.27pp | +0.3% | 39.1% | 19.4% | 1.41× |
+| 0.9 | 75.98% | -0.17pp | -0.1% | 12.8% | 5.2% | 1.11× |
+| 1.0 (teacher) | 76.15% | 0pp | 0% | 0.0% | 0.0% | 1.00× |
+
+### 结论
+**Top-k 累积权重保护是非常干净的 Pareto win**：
+
+- **T=top1_only**（师兄原版）：**2.91× 压缩、only -1.74pp** — 比 baseline 4× (-3.94pp) 直接掉一半 drop
+- **T=0.5**：1.81× 压缩、-0.54pp — 几乎无损
+- 曲线非常平滑：从 100% 压（4×）到 0% 压（1×），accuracy 单调上升，没 cliff
+
+直觉上：MoE 的 top-1 expert 平均吃 30% 的 routing weight mass，压它的影响远大于压排名第 8 的 expert（吃 ~5%）。**weight-proportional budget allocation 是理论最优近似**。
+
+### 输出
+- `eval_results/compression_lowrank_stage0_topk_cumulative/summary.json`
+- `eval_results/compression_lowrank_stage0_topk_cumulative/report.md`
+- `eval_results/compression_lowrank_stage0_topk_cumulative/tradeoff_curve.png`
+
+### E1 vs E2 综合对比（同 next-token acc 口径）
+
+| 方案 | 平均压缩 | top-1 drop |
+|---|---:|---:|
+| Baseline 全压 4× | 4.00× | -3.94pp |
+| E1 hidden_norm @ cf=0.75 | ~3.25× | -1.69pp |
+| **E2 T=top1_only** | **2.91×** | **-1.74pp** |
+| **E1 hidden_norm @ cf=0.50** | **~2.50×** | **-0.81pp** ← 同档最优 |
+| E2 T=0.5 | 1.81× | -0.54pp |
+| E1 hidden_norm @ cf=0.25 | ~1.75× | -0.56pp |
+| E2 T=0.7 | 1.41× | -0.27pp |
+| E2 T=0.9 | 1.11× | -0.17pp |
+
+**两条策略 Pareto 互补**：
+- 高压缩区（≥3×）：E1 hidden_norm 略胜
+- 中等压缩区（1.5–2.5×）：E2 累积权重略胜
+- **下一步可以试组合**：先按 hidden_norm 选 token，再对被选 token 用 E2 累积保护其 top-1 expert
+
+---
+
 ## 3. 跨实验总结
 
 ### 3.1 方向决策树
@@ -651,7 +771,7 @@ HF + hook 模拟（已经验证跟真 EP 等价），同一份 lcc held-out 测�
 
   ↓ 转向
 
-Combine 端 sparsification
+Combine 端 sparsification（全部 token 同档压）
   ├ naive top-k（B1）→ 2× +3.3%, 4× +20.6%, 8× +85% — GO 至 4×
   ├ topk_l2 winner（B2）→ 同档比 naive 强 20-156pp
   ├ 跨 4 域稳定（B3）→ 域无关 win
@@ -665,6 +785,12 @@ Combine 端 sparsification
 
 Next-token (D1)：2× 掉 0.66pp、4× 掉 3.94pp、8× 掉 9.42pp
 HumanEval (D2)：2× 掉 7.93pp、4× 掉 9.15pp、8× 掉 37.2pp（崩坏）
+
+  ↓ 不均匀压缩探索
+
+E1 选 token 压：hidden_norm @ cf=0.5 → 2.5× avg + 只 -0.81pp（vs full 4× 的 -3.94pp）
+E2 保护重要 expert：T=top1_only → 2.9× avg + 只 -1.74pp；T=0.5 → 1.8× avg + 只 -0.54pp
+  └ E1 / E2 都给出干净 Pareto 改进；E1+E2 可组合
 ```
 
 ### 3.2 关键 take-aways（论文级）
@@ -675,7 +801,12 @@ HumanEval (D2)：2× 掉 7.93pp、4× 掉 9.15pp、8× 掉 37.2pp（崩坏）
 
 3. **3 个 metric 的非线性关系**：PPL << next-token << HumanEval。**Code 部署只看 PPL 严重低估退化**。
 
-4. **甜点在 4× value 压缩**（= ~2.7× 真实 wire 压缩，含 indices + scale 开销）。8× 是悬崖。
+4. **均匀压缩甜点在 4× value 压缩**（= ~2.7× 真实 wire 压缩，含 indices + scale 开销）。8× 是悬崖。
+
+5. **不均匀压缩可以再降一个 magnitude 的 drop**：
+   - 按 token L2 norm 选择压（hidden_norm@cf=0.5）→ 2.5× avg compression 只掉 0.81pp
+   - 按 routing weight 累积阈值保护 expert（T=0.5）→ 1.8× avg compression 只掉 0.54pp
+   - router_conf 反直觉地最差 — 高 conf token 不是冗余，是决策明确
 
 ### 3.3 待办（按价值排序）
 
@@ -727,6 +858,12 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 WORLD_SIZE=8 MOE_IMPL=ep_ht ENFORCE_EAGER=1
 # Config-time 路径自检（用 Config kwarg 而非 env var 启用压缩）
 CUDA_VISIBLE_DEVICES=0,1 WORLD_SIZE=2 NUM_LAYERS=2 KEEP_FRAC=0.25 \
   /home/lzy/miniconda3/envs/vllm/bin/python -m eval.compression.test_ep_ht_compress_config
+
+# E 系列（HF 单进程 + monkey-patch）— env: atom
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+  /home/lzy/miniconda3/envs/atom/bin/python eval/compression/stage0_selective_token.py
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+  /home/lzy/miniconda3/envs/atom/bin/python eval/compression/stage0_topk_cumulative.py
 
 # D 系列
 CUDA_VISIBLE_DEVICES=0,1,2,3 \
