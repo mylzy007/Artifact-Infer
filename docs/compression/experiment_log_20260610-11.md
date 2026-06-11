@@ -4,7 +4,7 @@
 
 **研究问题**：在 frozen Qwen3-30B-A3B + 8×RTX 4090 EP 推理场景下，能否对 all-to-all payload 做有损压缩，把通信量降下来同时保住模型质量？
 
-**这两天做了 12 个实验**，从最初的 dispatch 端 SVD 谱分析（判断"激活是否天然低秩"），一路走到真实 EP=8 NCCL 上跑 HumanEval pass@1（真实 task accuracy 评测），最后做了两组"不均匀压缩"探索（按 token / 按 expert 选择性压）。中间证伪了 dispatch 端低秩这条路（无论换什么映射、训不训），最终在 combine 端找到正路：**topk_l2 + FP8 sparsification，4× 压缩下 HumanEval pass@1 从 55.5% 掉到 46.3%（−9.15pp）**；进一步证明 **不均匀压缩可以把同等压缩比下的 next-token drop 从 -3.94pp 救到 -0.54pp**（E1 hidden_norm 选择 + E2 累积权重保护）。
+**这两天做了 13 个实验**，从最初的 dispatch 端 SVD 谱分析（判断"激活是否天然低秩"），一路走到真实 EP=8 NCCL 上跑 HumanEval pass@1（真实 task accuracy 评测），最后做了两组"不均匀压缩"探索（按 token / 按 expert 选择性压）。中间证伪了 dispatch 端低秩这条路（无论换什么映射、训不训），最终在 combine 端找到正路：**topk_l2 + FP8 sparsification，4× 压缩下 HumanEval pass@1 从 55.5% 掉到 46.3%（−9.15pp）**；进一步证明 **不均匀压缩可以把同等压缩比下的 next-token drop 从 -3.94pp 救到 -0.54pp**（E1 hidden_norm 选择 + E2 累积权重保护）。
 
 （前后曾尝试 stage-0 SVD v1（标定太少）和 EP=2 smoke test，结果均被 stage-0 SVD v2 / EP=8 完整模型 sweep 完全覆盖，已删；HF 路径的 HumanEval 因 device_map="auto" 太慢被弃用，最终用真 EP=8 跑完。）
 
@@ -37,7 +37,9 @@
 | **keep_frac** | keep fraction | **每一行被压缩时保留多少个分量**（top-k by magnitude）。原 row 是 hidden_size=2048 维的 bf16 向量，压缩后只保 round(2048 × keep_frac) 个值。例如 keep_frac=0.25 → 保 512 个值（约 4× value 压缩）。 | (0, 1]；keep_frac=1 = 不压 |
 | **cf** | compress_frac（仅 E1）| **本层有多少比例的 token 被压缩**。E1 实验中，按某种重要性信号挑出 cf 比例的 token 走压缩路径、剩下的 (1-cf) 走原 bf16 路径。例如 cf=0.5 → 50% token 被压、50% 原样。 | [0, 1]；cf=0 = 全不压（teacher）；cf=1 = 全压 |
 | **T** | threshold（仅 E2）| **累积权重保护阈值**。E2 中每个 token 的 top-8 个 expert 按 routing weight 降序累加，"之前的累积 weight < T" 的 expert 全量保留、其余压缩。例如 T=0.5 → 累积到 0.5 前的几个 expert 不压。 | [0, 1]；T=0 = 全压；T=1 = 全保护（teacher） |
-| **avg compress** | average compression ratio | E2 输出"平均有效压缩比"——按 (token, expert) 对的全量 vs 压缩比例加权算的平均字节压缩。例如 50% 对全量 + 50% 对 4× 压 → avg = 1 / (0.5 + 0.5/4) = 1.6×。 | ≥ 1 |
+| **SELECT_MODE** | env var（仅 E3 真 EP 路径）| **生产 EP-HT 路径上的选择性压缩 mode**。`uniform` = 老路径全压；`row_weight` = 按 row 的实际 routing weight 选；`row_norm` = 按 row 对应的 hidden state L2 norm 选。 | "uniform" / "row_weight" / "row_norm" |
+| **SELECT_FRAC** | env var（仅 E3）| **压缩多少比例的 row**（不是 token；row = (token, expert) pair）。0.5 = 压最低 50%；0.875 = 压最低 87.5% ≈ 保 top-1 expert。 | [0, 1] |
+| **avg compress** | average compression ratio | E2/E3 输出"平均有效压缩比"——按 (token, expert) 对的全量 vs 压缩比例加权算的平均字节压缩。例如 50% 对全量 + 50% 对 4× 压 → avg = 1 / (0.5 + 0.5/4) = 1.6×。 | ≥ 1 |
 
 ### 精度指标
 
@@ -87,6 +89,7 @@
 ### 不均匀压缩探索（师兄建议）
 - [E1. 选择性 per-token 压缩](#e1-选择性-per-token-压缩) — "压哪些 token 重要吗"
 - [E2. Top-k 累积权重保护](#e2-top-k-累积权重保护) — "top-1 / 重要 expert 全量"
+- [E3. 真 EP=8 HumanEval 实测 E1/E2 winners](#e3-真-ep8-humaneval-实测-e1e2-winners) — 把"next-token win"用 task accuracy 验证
 
 ---
 
@@ -793,6 +796,74 @@ T 范围：
 
 ---
 
+## E3. 真 EP=8 HumanEval 实测 E1/E2 winners
+
+### 目的
+E1/E2 只在 HF + next-token top-1 accuracy 上做了 sweep，**没测真 task accuracy**。D2 已经证明 next-token / PPL 比 HumanEval 乐观 2–12 倍，所以 E1/E2 的"-0.54pp / -0.81pp" 必须用 HumanEval 验证才算数。**把不均匀压缩从"next-token 上看似 promising"升级到"真 task accuracy 上是否真的赢"**。
+
+### 策略
+不走 HF + device_map="auto"（pipeline parallel，慢 6 倍），改走**真 EP=8 NCCL 路径**（八卡并行，跟 D2 同口径）。但 production `combine_ep_ht.py` 原本只支持均匀压缩，需要先加 selective 支持。
+
+**代码改动**（不动 wire format，仅在 lossy round-trip 上做选择性）：
+- `dispatch_ep_ht.py`：`TokMetaEPHT` 加一个 `recv_topk_w_real` 字段，把 dispatch 已经算的 per-row 实际 routing weight 透传到 combine
+- `combine_ep_ht.py`：加 `_sparsify_lossy_roundtrip`（同 algo 但返回 dense [N, H] 而非 packed bytes）+ `_selective_compress_mask` + `_resolve_selective_mode` env-var 读取
+- 新 env var：
+  - `MOE_COMBINE_SELECT_MODE` ∈ {"uniform", "row_weight", "row_norm"}（default "uniform"）
+  - `MOE_COMBINE_SELECT_FRAC` ∈ float [0, 1]（fraction of rows to compress, default 1.0）
+
+**实现哲学**：wire format 保持 dense bf16（不变），lossy round-trip（sparsify+L2 rescale+FP8）只跑在 mask=True 的行上。这样 **task accuracy 跟真正实现 ragged packing 完全一致**，wall-clock 没省但数字真实。
+
+### 代码
+- 改动：`workshop/nanovllm_moe/artifacts/modeling/layers/moe/{dispatch_ep_ht,combine_ep_ht}.py`
+- 驱动：`eval/compression/stage0_humaneval_selective_ep.py`（约 250 行，基于 D2 + 5 个 config 的 env-var 切换）
+
+### 配置 / 组件
+- env: `vllm`（含 flashinfer + sgl_kernel + human-eval）
+- 8 GPU EP=8, MOE_IMPL=ep_ht, ENFORCE_EAGER=1
+- max_new_tokens=384, batch=8（同 D2，便于直接对比）
+- 164 题 × 5 config
+
+5 个 config 对应关系：
+
+| label | keep_frac | select_mode | select_frac | 近似 HF 哪个？ |
+|---|---:|---|---:|---|
+| teacher | None | uniform | - | D2 teacher（一致性 check）|
+| baseline_uniform_4x | 0.25 | uniform | - | D2 baseline 4×（一致性 check）|
+| selective_row_weight_50 | 0.25 | row_weight | 0.5 | 近似 E2 T=0.5（per-token cum → per-row weight）|
+| selective_row_weight_875 | 0.25 | row_weight | 0.875 | 近似 E2 T=top1_only（保 top 12.5% rows by weight ≈ 保 top-1 expert）|
+| selective_row_norm_50 | 0.25 | row_norm | 0.5 | 近似 E1 hidden_norm cf=0.5（per-token → per-row by L2 norm）|
+
+> 注意：HF E1/E2 是 per-(token, expert) pair 决策，EP path 是 per-row 决策（语义略不同但同 spirit）。
+
+### 完整实验结果
+
+| Config | 平均压缩 | **HumanEval pass@1** | drop vs teacher | drop vs 4× baseline |
+|---|---:|---:|---:|---:|
+| teacher | - | **55.49% (91/164)** | - | -9.15pp |
+| baseline_uniform_4x | 4.0× | **46.34% (76/164)** | -9.15pp | 0 |
+| selective_row_weight_50 | 2.0× | 47.56% (78/164) | -7.93pp | -1.22pp |
+| **🏆 selective_row_weight_875** | **2.9×** | **50.61% (83/164)** | **-4.88pp** | **-4.27pp** |
+| selective_row_norm_50 | 2.0× | 47.56% (78/164) | -7.93pp | -1.22pp |
+
+### 结论
+
+1. **🏆 row_weight_875（"几乎只保 top-1"）是 clear Pareto win**：同压缩比下掉分**减半**——2.9× 平均压缩只掉 4.88pp，而同压缩比下的均匀 2× uniform 掉 7.93pp。**师兄"top-1 全量"建议在 HumanEval 上验证成功**。
+
+2. **row_weight_50 和 row_norm_50 都 = 2× uniform**（47.56% = 78/164，完全相同）。也就是说，在 row-level 决策下，"选哪 50% 压"等价于"直接降低压缩率到 2×"，**选择策略本身没增加额外价值**。
+
+3. **HF E1/E2 上看到的 next-token 优势在 HumanEval 上消化了**——HF E1 hidden_norm@cf=0.5 比 random 强 1pp next-token，但 EP 上 row_norm_50 跟 2× uniform 没区别。这印证了之前的判断：**next-token 比 HumanEval 乐观，浅层的选择策略 win 经常被 task-level cliff 消化掉**。
+
+4. **生产路径一致性验证**：新加的 `MOE_COMBINE_SELECT_MODE` 路径不破坏 baseline——teacher 55.49% 和 baseline 4× 46.34% 都跟 D2 完全一致。
+
+### 输出
+- `eval_results/compression_lowrank_stage0_humaneval_selective_ep/summary.json`
+- `eval_results/compression_lowrank_stage0_humaneval_selective_ep/report.md`
+- `eval_results/compression_lowrank_stage0_humaneval_selective_ep/pass_at_1.png`
+- `eval_results/compression_lowrank_stage0_humaneval_selective_ep/completions/{label}.jsonl`（5 个 config 完整生成）
+- `eval_results/compression_lowrank_stage0_humaneval_selective_ep/results/{label}.jsonl`
+
+---
+
 ## 3. 跨实验总结
 
 ### 3.1 方向决策树
@@ -823,11 +894,16 @@ Combine 端 sparsification（全部 token 同档压）
 Next-token (D1)：2× 掉 0.66pp、4× 掉 3.94pp、8× 掉 9.42pp
 HumanEval (D2)：2× 掉 7.93pp、4× 掉 9.15pp、8× 掉 37.2pp（崩坏）
 
-  ↓ 不均匀压缩探索
+  ↓ 不均匀压缩探索（HF next-token）
 
 E1 选 token 压：hidden_norm @ cf=0.5 → 2.5× avg + 只 -0.81pp（vs full 4× 的 -3.94pp）
 E2 保护重要 expert：T=top1_only → 2.9× avg + 只 -1.74pp；T=0.5 → 1.8× avg + 只 -0.54pp
-  └ E1 / E2 都给出干净 Pareto 改进；E1+E2 可组合
+
+  ↓ 用真 EP=8 HumanEval 实测（task-level 验证 — 唯一可信）
+
+E3 row_weight_875（≈保 top-1）→ 2.9× avg + HumanEval 只 -4.88pp（vs 4× uniform -9.15pp）✅
+E3 row_weight_50 / row_norm_50 = 47.56% = 2× uniform → 没赢
+  └ 结论：HF next-token 上的"选哪种 50%"win 被 HumanEval 消化；真赢只剩"保 top-1 expert"
 ```
 
 ### 3.2 关键 take-aways（论文级）
@@ -840,10 +916,15 @@ E2 保护重要 expert：T=top1_only → 2.9× avg + 只 -1.74pp；T=0.5 → 1.8
 
 4. **均匀压缩甜点在 4× value 压缩**（= ~2.7× 真实 wire 压缩，含 indices + scale 开销）。8× 是悬崖。
 
-5. **不均匀压缩可以再降一个 magnitude 的 drop**：
+5. **不均匀压缩可以再降一个 magnitude 的 drop（HF next-token 上）**：
    - 按 token L2 norm 选择压（hidden_norm@cf=0.5）→ 2.5× avg compression 只掉 0.81pp
    - 按 routing weight 累积阈值保护 expert（T=0.5）→ 1.8× avg compression 只掉 0.54pp
    - router_conf 反直觉地最差 — 高 conf token 不是冗余，是决策明确
+
+6. **但 HumanEval task-level（E3）只有 row_weight_875 真赢**：
+   - 🏆 row_weight_875（≈保 top-1 expert）：**2.9× 平均压缩 HumanEval 只掉 4.88pp**（vs 4× uniform 掉 9.15pp）
+   - row_weight_50 / row_norm_50 都 = 2× uniform（47.56%）—— 选择策略**没增加价值**
+   - **HF next-token 的 0.5-1pp 优势在 HumanEval 上完全消化**——任何看起来"几乎免费"的优化必须用 task accuracy 重新验证
 
 ### 3.3 待办（按价值排序）
 
@@ -901,6 +982,13 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 \
   /home/lzy/miniconda3/envs/atom/bin/python eval/compression/stage0_selective_token.py
 CUDA_VISIBLE_DEVICES=0,1,2,3 \
   /home/lzy/miniconda3/envs/atom/bin/python eval/compression/stage0_topk_cumulative.py
+
+# E3（真 EP=8 + HumanEval, env: vllm + CUDA 12.8）
+export CUDA_HOME=/usr/local/cuda-12.8
+export PATH=/usr/local/cuda-12.8/bin:/home/lzy/miniconda3/envs/vllm/bin:$PATH
+
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 WORLD_SIZE=8 MOE_IMPL=ep_ht ENFORCE_EAGER=1 \
+  /home/lzy/miniconda3/envs/vllm/bin/python -m eval.compression.stage0_humaneval_selective_ep
 
 # D 系列
 CUDA_VISIBLE_DEVICES=0,1,2,3 \

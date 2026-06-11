@@ -86,6 +86,13 @@ class TokMetaEPHT(NamedTuple):
     is_source_leader: bool
     source_leader_global_rank: int
 
+    # Phase 5: per-received-row routing weight from the original sender. Same
+    # shape as recv_hidden's row count. Used by CombineEPHT's selective
+    # compression to decide which rows to compress (e.g., "compress the
+    # bottom-X fraction by weight"). Distinct from `recv_topk_weights` above,
+    # which is forced to 1.0 so the inner fused_moe kernel does not double-weight.
+    recv_topk_w_real: torch.Tensor | None = None     # [total_recv]  fp32
+
 
 class DispatchEPHT(Artifact, nn.Module):
     @property
@@ -459,4 +466,5 @@ class DispatchEPHT(Artifact, nn.Module):
             T_local=T,
             is_source_leader=self.is_source_leader,
             source_leader_global_rank=self.source_leader_global_rank,
+            recv_topk_w_real=recv_topk_w,
         )

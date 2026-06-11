@@ -27,6 +27,23 @@ Optional combine-side compression (eager only):
 
   Effective values per forward = env if set, else constructor default.
 
+Phase 5: per-row SELECTIVE compression (env-var only, accuracy measurement mode).
+
+  When MOE_COMBINE_SELECT_MODE is set to a non-default value, the dense reverse
+  a2a is kept (wire format unchanged) but the lossy round-trip (sparsify + L2
+  rescale + FP8) is applied ONLY to rows selected by the strategy. This lets us
+  measure E1/E2-style "selective compression" task accuracy without changing
+  the on-the-wire payload format.
+
+    MOE_COMBINE_SELECT_MODE  ∈ {"uniform" (default), "row_weight", "row_norm"}
+      uniform     — all rows compressed at keep_frac (original behavior)
+      row_weight  — compress the lowest-`select_frac` rows by routing weight
+                    (uses tok_meta.recv_topk_w_real). Approximates E2.
+      row_norm    — compress the lowest-`select_frac` rows by recv_hidden L2
+                    norm. Approximates E1 hidden_norm.
+    MOE_COMBINE_SELECT_FRAC  ∈ float [0, 1]    fraction of rows to compress
+                                               (default 1.0 = compress all)
+
 When enabled, each row of expert_out is replaced by its top-k magnitude
 sparsification (default with per-row L2 rescale; FP8 round-trip on the kept
 values by default). The reverse all-to-all moves two or three smaller
@@ -58,6 +75,19 @@ from workshop.nanovllm_moe.services.utils.parallel import (
 )
 
 FP8_E4M3_MAX = 448.0
+
+
+def _resolve_selective_mode() -> tuple[str, float]:
+    """Return (mode, frac). mode in {'uniform', 'row_weight', 'row_norm'};
+    frac is fraction of rows to compress (when mode != 'uniform')."""
+    mode = os.environ.get("MOE_COMBINE_SELECT_MODE", "uniform").lower()
+    if mode not in ("uniform", "row_weight", "row_norm"):
+        mode = "uniform"
+    try:
+        frac = float(os.environ.get("MOE_COMBINE_SELECT_FRAC", "1.0"))
+    except ValueError:
+        frac = 1.0
+    return mode, max(0.0, min(1.0, frac))
 
 
 def _resolve_compression(
@@ -178,6 +208,76 @@ def _reverse_ep_a2a_bytes(
     return recv
 
 
+def _sparsify_lossy_roundtrip(
+    x: torch.Tensor,                # [N_rows, H]   bf16
+    k: int,
+    use_fp8: bool,
+    use_l2: bool,
+) -> torch.Tensor:
+    """Apply the topk_l2 + (optional) FP8 sparsification + reconstruction as a
+    dense in-place lossy round-trip. Output has SAME shape/dtype as input.
+
+    Used by Phase-5 selective-compression mode where we want to measure the
+    end-to-end accuracy of "compress these specific rows" without changing the
+    on-the-wire payload format. The wire still carries dense bf16; we just
+    pass each selected row through the same lossy transform first."""
+    if x.numel() == 0:
+        return x
+    N, H = x.shape
+    xf = x.float()
+    abs_x = xf.abs()
+    _, topk_idx = abs_x.topk(k, dim=-1)
+    kept = xf.gather(-1, topk_idx)
+    if use_l2:
+        full_n2 = (xf ** 2).sum(dim=-1, keepdim=True).clamp_min(1e-12).sqrt()
+        sparse_n2 = (kept ** 2).sum(dim=-1, keepdim=True).clamp_min(1e-12).sqrt()
+        kept = kept * (full_n2 / sparse_n2)
+    if use_fp8:
+        amax = kept.abs().amax(dim=-1, keepdim=True).clamp_min(1e-12)
+        scaled = (kept / amax) * FP8_E4M3_MAX
+        kept_fp8 = scaled.to(torch.float8_e4m3fn)
+        kept = (kept_fp8.to(torch.float32) / FP8_E4M3_MAX) * amax
+    out = torch.zeros(N, H, dtype=torch.float32, device=x.device)
+    out.scatter_(-1, topk_idx, kept)
+    return out.to(x.dtype)
+
+
+def _selective_compress_mask(
+    tok_meta: TokMetaEPHT,
+    expert_out: torch.Tensor,
+    select_mode: str,
+    select_frac: float,
+) -> torch.Tensor | None:
+    """Return bool mask [total_recv] — True = this row should be compressed.
+
+    None if select_mode == 'uniform' (caller should use the full uniform path)."""
+    if select_mode == "uniform":
+        return None
+    total_recv = expert_out.shape[0]
+    device = expert_out.device
+    if total_recv == 0 or select_frac <= 0.0:
+        return torch.zeros(total_recv, dtype=torch.bool, device=device)
+    if select_frac >= 1.0:
+        return torch.ones(total_recv, dtype=torch.bool, device=device)
+    if select_mode == "row_weight":
+        scores = tok_meta.recv_topk_w_real
+        if scores is None:
+            return torch.zeros(total_recv, dtype=torch.bool, device=device)
+        scores = scores.to(device).float()
+    elif select_mode == "row_norm":
+        if tok_meta.recv_hidden is None or tok_meta.recv_hidden.numel() == 0:
+            return torch.zeros(total_recv, dtype=torch.bool, device=device)
+        scores = tok_meta.recv_hidden.float().norm(dim=-1)
+    else:
+        return torch.zeros(total_recv, dtype=torch.bool, device=device)
+    # Compress the LOWEST `select_frac` fraction (small score => less important).
+    n_compress = int(round(total_recv * select_frac))
+    n_compress = max(1, min(total_recv - 1, n_compress))
+    # kthvalue: smallest k values, threshold = the k-th value.
+    thresh = torch.kthvalue(scores, n_compress).values
+    return scores <= thresh
+
+
 def _decode_at_recv(
     indices_u8_flat: torch.Tensor,        # [N * 2k] uint8
     values_u8_flat: torch.Tensor,         # [N * k] (FP8) or [N * 2k] (bf16) uint8
@@ -263,6 +363,23 @@ class CombineEPHT(Artifact, nn.Module):
             self.compress_keep_frac, self.compress_fp8, self.compress_use_l2,
         )
         compress_on = 0.0 < keep_frac < 1.0
+        select_mode, select_frac = _resolve_selective_mode()
+        # Phase-5 selective mode: apply lossy round-trip to a subset of rows,
+        # but keep the wire format DENSE bf16 so we measure pure accuracy of
+        # "compress these rows" without needing a per-row ragged packer.
+        if compress_on and select_mode != "uniform":
+            k_keep = max(1, min(H, int(round(H * keep_frac))))
+            mask = _selective_compress_mask(tok_meta, expert_out, select_mode, select_frac)
+            if mask is not None and mask.any():
+                # Apply lossy round-trip on selected rows; leave others untouched.
+                # Working on a clone to keep autograd / non-overwrite semantics if any caller cares.
+                expert_out = expert_out.clone()
+                rows_to_compress = expert_out[mask]
+                expert_out[mask] = _sparsify_lossy_roundtrip(
+                    rows_to_compress, k_keep, use_fp8, use_l2,
+                )
+            # Fall through to the dense bf16 a2a (compress_on disabled below).
+            compress_on = False
         if compress_on:
             k_keep = max(1, min(H, int(round(H * keep_frac))))
             (
