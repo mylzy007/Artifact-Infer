@@ -26,6 +26,43 @@
 | 数据 | LongBench (`/home/lzy/datasets/moe_benchmarks/longbench/extracted/data/`), GSM8K (`.../gsm8k/main/`), HumanEval (via `human_eval` pip package) |
 | MoE 实现 | HF 参考实现 `Qwen3MoeSparseMoeBlock`（实验 A 系列）+ 用户的 `workshop/nanovllm_moe/` EP-HT 真实实现（实验 D 系列）|
 
+## 1.5 术语 / 缩写 / 参数说明
+
+每个实验里频繁出现的几个参数 / 指标，统一在这里说清楚：
+
+### 压缩相关参数
+
+| 缩写 | 全称 | 含义 | 取值范围 |
+|---|---|---|---|
+| **keep_frac** | keep fraction | **每一行被压缩时保留多少个分量**（top-k by magnitude）。原 row 是 hidden_size=2048 维的 bf16 向量，压缩后只保 round(2048 × keep_frac) 个值。例如 keep_frac=0.25 → 保 512 个值（约 4× value 压缩）。 | (0, 1]；keep_frac=1 = 不压 |
+| **cf** | compress_frac（仅 E1）| **本层有多少比例的 token 被压缩**。E1 实验中，按某种重要性信号挑出 cf 比例的 token 走压缩路径、剩下的 (1-cf) 走原 bf16 路径。例如 cf=0.5 → 50% token 被压、50% 原样。 | [0, 1]；cf=0 = 全不压（teacher）；cf=1 = 全压 |
+| **T** | threshold（仅 E2）| **累积权重保护阈值**。E2 中每个 token 的 top-8 个 expert 按 routing weight 降序累加，"之前的累积 weight < T" 的 expert 全量保留、其余压缩。例如 T=0.5 → 累积到 0.5 前的几个 expert 不压。 | [0, 1]；T=0 = 全压；T=1 = 全保护（teacher） |
+| **avg compress** | average compression ratio | E2 输出"平均有效压缩比"——按 (token, expert) 对的全量 vs 压缩比例加权算的平均字节压缩。例如 50% 对全量 + 50% 对 4× 压 → avg = 1 / (0.5 + 0.5/4) = 1.6×。 | ≥ 1 |
+
+### 精度指标
+
+| 缩写 | 全称 | 含义 | 例 |
+|---|---|---|---|
+| **PPL** | perplexity 困惑度 | exp(cross-entropy loss)。语言模型的标准生成质量代理指标。**越低越好**。 | teacher PPL = 3.15 |
+| **PPL +%** | PPL increase percentage | (student_ppl - teacher_ppl) / teacher_ppl × 100% **相对**变化。 | 3.70 vs 3.15 = +17.2% |
+| **top-1 acc** | next-token top-1 accuracy | argmax(logits) == ground_truth 的概率。**越高越好**。 | teacher 76.15% |
+| **pp** | percentage points 百分点 | 两个百分数相减的**绝对差值**。"掉 1pp" ≠ "掉 1%"。 | 76.15% → 75.34% = 掉 **0.81pp**（如果按相对算就是 -1.06%，容易混淆）|
+| **pass@1** | HumanEval pass-at-1 | 164 道代码题里 greedy 生成一次就过测试的比例。**越高越好**。 | teacher 55.49% (91/164) |
+| **EV @ ell** | explained variance at rank ell | SVD 累计方差解释率：前 ell 个奇异分量解释的方差占总方差比例。**越高 = 越低秩**。 | layer 12 EV@d/4 = 0.66 |
+| **relMSE** | relative MSE | MSE(student, teacher) / ‖teacher‖²。**越低 = 越接近 teacher**。 | hidden relMSE = 0.013 |
+| **agreement w/ teacher top-1** | top-1 prediction match | 学生 argmax(logits) == 老师 argmax(logits) 的概率（与 ground truth 无关）。**衡量学生跟老师"行为是否一致"**。 | 95% = 严格意义上"几乎相同的模型" |
+
+### 模型 / 架构相关
+
+| 缩写 | 含义 |
+|---|---|
+| **d** | hidden_size = 2048（Qwen3-30B-A3B）|
+| **E** | num_experts = 128 |
+| **top_k** / **K** | num_experts_per_tok = 8（每个 token 路由到 8 个 expert）|
+| **N** | 样本 token 数（SVD 分析里 N/d 比值衡量 well-conditioned 程度，N ≥ 4d 才稳）|
+| **ell** | SVD truncation rank（保留前 ell 个奇异分量）|
+| **routing weight** | softmax(W_gate · x) 中的某 expert 那一项，∈ [0, 1]，top-k 加起来 = 1 |
+
 ## 2. 实验目录
 
 ### 算法层面（HF 单进程模拟）
